@@ -1,59 +1,101 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { PhCamera as CameraIcon, PhPlus as PlusIcon, PhTrash as TrashIcon } from '@phosphor-icons/vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { PhArrowLeft as ArrowIcon, PhCheck as CheckIcon, PhMagnifyingGlass as SearchIcon, PhPlus as PlusIcon, PhSneaker as ShoeIcon, PhTrash as TrashIcon, PhUserPlus as UserPlusIcon } from '@phosphor-icons/vue'
 import AppShell from '../components/AppShell.vue'
+import MediaUploader from '../components/MediaUploader.vue'
 import { api, validationErrors } from '../services/api'
 import { money } from '../lib/format'
 
 const router = useRouter()
+const route = useRoute()
 const loading = ref(false)
 const errors = ref({})
-const photos = ref([])
-const form = reactive({
-  client: { name: '', phone: '', email: '', notes: '' },
-  items: [{ shoe_type: 'Sneakers', brand: '', color: '', service: 'Deep clean', condition_notes: '', quantity: 1, unit_price: 30000 }],
-  discount: 0, deposit: 0, payment_method: 'cash', due_at: '', notes: '',
+const search = ref('')
+const searching = ref(false)
+const matches = ref([])
+const selectedClient = ref(null)
+const creatingClient = ref(false)
+const clientForm = reactive({ name: '', phone: '', email: '', notes: '' })
+const order = reactive({ sessions: [], discount: 0, deposit: 0, payment_method: 'cash', due_at: '', notes: '' })
+let timer
+
+watch(search, () => {
+  clearTimeout(timer)
+  if (search.value.length < 2) { matches.value = []; return }
+  timer = setTimeout(async () => {
+    searching.value = true
+    try { matches.value = (await api.get('/clients', { params: { search: search.value } })).data.data }
+    finally { searching.value = false }
+  }, 250)
 })
 
-const subtotal = computed(() => form.items.reduce((sum, item) => sum + Number(item.quantity) * Number(item.unit_price), 0))
-const total = computed(() => Math.max(0, subtotal.value - Number(form.discount || 0)))
+const subtotal = computed(() => order.sessions.reduce((sum, item) => sum + Number(item.unit_price || 0), 0))
+const total = computed(() => Math.max(0, subtotal.value - Number(order.discount || 0)))
 
-function addItem() { form.items.push({ shoe_type: 'Sneakers', brand: '', color: '', service: 'Deep clean', condition_notes: '', quantity: 1, unit_price: 30000 }) }
-function removeItem(index) { if (form.items.length > 1) form.items.splice(index, 1) }
-function selectPhotos(event) { photos.value = [...event.target.files] }
+async function selectClient(client) {
+  selectedClient.value = (await api.get(`/clients/${client.id}`)).data
+  matches.value = []; search.value = ''; creatingClient.value = false; order.sessions = []
+}
+async function createClient() {
+  if (!navigator.onLine) { errors.value = { connection: ['A connection is required to register a client.'] }; return }
+  errors.value = {}
+  try { await selectClient((await api.post('/clients', clientForm)).data) }
+  catch (error) { errors.value = validationErrors(error) }
+}
+function addExisting(shoe) {
+  if (order.sessions.some((session) => session.shoe_id === shoe.id)) return
+  order.sessions.push({ shoe_id: shoe.id, shoe, service: 'Deep clean', condition_notes: '', unit_price: 30000, photos: [] })
+}
+function addNew() {
+  order.sessions.push({ shoe_id: null, shoe: { shoe_type: 'Sneakers', brand: '', model: '', color: '', size: '', identifying_notes: '' }, service: 'Deep clean', condition_notes: '', unit_price: 30000, photos: [] })
+}
+function removeSession(index) { order.sessions.splice(index, 1) }
 
 async function submit() {
-  loading.value = true
-  errors.value = {}
+  if (!navigator.onLine) { errors.value = { connection: ['A connection is required to save an intake.'] }; return }
+  loading.value = true; errors.value = {}
   const payload = new FormData()
-  Object.entries(form.client).forEach(([key, value]) => payload.append(`client[${key}]`, value))
-  form.items.forEach((item, index) => Object.entries(item).forEach(([key, value]) => payload.append(`items[${index}][${key}]`, value)))
-  for (const key of ['discount', 'deposit', 'payment_method', 'due_at', 'notes']) if (form[key] !== '') payload.append(key, form[key])
-  photos.value.forEach((photo) => payload.append('photos[]', photo))
-
-  try {
-    const { data } = await api.post('/orders', payload)
-    router.push(`/orders/${data.id}`)
-  } catch (error) { errors.value = validationErrors(error) } finally { loading.value = false }
+  payload.append('client_id', selectedClient.value.id)
+  order.sessions.forEach((session, index) => {
+    if (session.shoe_id) payload.append(`sessions[${index}][shoe_id]`, session.shoe_id)
+    else Object.entries(session.shoe).forEach(([key, value]) => payload.append(`sessions[${index}][shoe][${key}]`, value))
+    for (const key of ['service', 'condition_notes', 'unit_price']) payload.append(`sessions[${index}][${key}]`, session[key])
+    session.photos.forEach((photo) => payload.append(`sessions[${index}][photos][]`, photo))
+  })
+  for (const key of ['discount', 'deposit', 'payment_method', 'due_at', 'notes']) if (order[key] !== '') payload.append(key, order[key])
+  try { const { data } = await api.post('/orders', payload); router.push(`/orders/${data.id}`) }
+  catch (error) { errors.value = validationErrors(error) }
+  finally { loading.value = false }
 }
+
+onMounted(async () => {
+  if (route.query.client) {
+    try { await selectClient({ id: route.query.client }) } catch { errors.value = { client_id: ['The selected client could not be loaded.'] } }
+  }
+})
 </script>
 
 <template>
   <AppShell>
-    <header><p class="text-sm font-bold text-[#376b55] dark:text-[#9ee6c2]">Intake</p><h1 class="mt-1 text-4xl font-black tracking-[-0.045em]">Record a new order</h1><p class="mt-3 max-w-2xl text-stone-600 dark:text-stone-400">Capture customer details, each pair, condition photos, and the amount received.</p></header>
-    <form class="mt-8 grid gap-6 xl:grid-cols-[1fr_340px]" @submit.prevent="submit">
+    <RouterLink to="/orders" class="text-link"><ArrowIcon :size="17" /> Back to service orders</RouterLink>
+    <header class="mt-6"><p class="eyebrow">New intake</p><h1 class="page-title">Receive footwear for care</h1><p class="mt-3 max-w-2xl text-muted">Select the returning client, activate existing footwear or register a new pair, then record the service details.</p></header>
+
+    <section v-if="!selectedClient" class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <article class="form-section"><div class="flex items-center justify-between"><div><h2 class="section-title">Find an existing client</h2><p class="mt-1 text-sm text-muted">Search by name, phone number, or email address.</p></div></div><label class="search-box mt-6"><SearchIcon :size="20" /><input v-model="search" type="search" placeholder="Start typing client details" autofocus /></label><p v-if="searching" class="mt-3 text-sm text-muted">Searching client records…</p><div v-else-if="matches.length" class="mt-4 divide-y divide-line rounded-lg border border-line"><button v-for="client in matches" :key="client.id" type="button" class="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-sky-soft" @click="selectClient(client)"><span><strong class="block text-navy">{{ client.name }}</strong><span class="mt-1 block text-sm text-muted">{{ client.phone }} · {{ client.email }}</span></span><span class="text-xs font-bold text-sky-deep">{{ client.shoes_count }} pairs</span></button></div><p v-else-if="search.length >= 2" class="mt-4 rounded-lg bg-canvas p-4 text-sm text-muted">No matching client. Register them using the form alongside.</p></article>
+      <article class="form-section"><div class="flex items-center gap-3"><span class="metric-icon"><UserPlusIcon :size="22" /></span><div><h2 class="section-title">Register a new client</h2><p class="mt-1 text-sm text-muted">Only use this when no existing record matches.</p></div></div><form class="mt-6 grid gap-4 sm:grid-cols-2" @submit.prevent="createClient"><label class="field"><span>Full name</span><input v-model="clientForm.name" required /><small v-if="errors.name">{{ errors.name[0] }}</small></label><label class="field"><span>Phone number</span><input v-model="clientForm.phone" type="tel" required placeholder="0772 000 000" /><small v-if="errors.phone">{{ errors.phone[0] }}</small></label><label class="field sm:col-span-2"><span>Email address</span><input v-model="clientForm.email" type="email" required placeholder="client@example.com" /><small v-if="errors.email">{{ errors.email[0] }}</small></label><label class="field sm:col-span-2"><span>Client notes</span><textarea v-model="clientForm.notes" rows="2" placeholder="Preferences or useful details"></textarea></label><button class="button-primary sm:col-span-2 sm:justify-self-start" type="submit">Register and continue</button></form></article>
+    </section>
+
+    <form v-else class="mt-8 grid gap-6 xl:grid-cols-[1fr_350px]" @submit.prevent="submit">
       <div class="space-y-6">
-        <section class="form-section"><h2 class="section-title">Client details</h2><div class="mt-5 grid gap-4 sm:grid-cols-2"><label class="field"><span>Full name</span><input v-model="form.client.name" required /><small v-if="errors['client.name']">{{ errors['client.name'][0] }}</small></label><label class="field"><span>Phone number</span><input v-model="form.client.phone" type="tel" required placeholder="0772 000 000" /><small v-if="errors['client.phone']">{{ errors['client.phone'][0] }}</small></label><label class="field"><span>Email address</span><input v-model="form.client.email" type="email" placeholder="Optional" /></label><label class="field"><span>Client notes</span><input v-model="form.client.notes" placeholder="Optional preferences" /></label></div></section>
+        <section class="form-section"><div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div><p class="text-xs font-bold text-sky-deep">SELECTED CLIENT</p><h2 class="mt-1 text-2xl font-bold text-navy">{{ selectedClient.name }}</h2><p class="mt-1 text-sm text-muted">{{ selectedClient.phone }} · {{ selectedClient.email }}</p></div><button class="button-secondary" type="button" @click="selectedClient = null">Change client</button></div></section>
 
-        <section class="form-section"><div class="flex items-center justify-between"><h2 class="section-title">Shoes and services</h2><button class="button-secondary" type="button" @click="addItem"><PlusIcon :size="17" /> Add pair</button></div>
-          <div class="mt-5 space-y-5"><fieldset v-for="(item, index) in form.items" :key="index" class="rounded-2xl border border-stone-200 p-4 dark:border-stone-700"><legend class="px-2 text-sm font-black">Pair {{ index + 1 }}</legend><div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><label class="field"><span>Shoe type</span><input v-model="item.shoe_type" required /></label><label class="field"><span>Brand</span><input v-model="item.brand" placeholder="Optional" /></label><label class="field"><span>Colour</span><input v-model="item.color" /></label><label class="field"><span>Service</span><select v-model="item.service"><option>Standard wash</option><option>Deep clean</option><option>Premium care</option><option>Rewash</option></select></label><label class="field"><span>Quantity</span><input v-model.number="item.quantity" type="number" min="1" max="20" /></label><label class="field"><span>Price per pair (UGX)</span><input v-model.number="item.unit_price" type="number" min="0" step="1000" /></label><label class="field sm:col-span-2 lg:col-span-3"><span>Condition notes</span><textarea v-model="item.condition_notes" rows="2" placeholder="Existing marks, damage, or special care instructions"></textarea></label></div><button v-if="form.items.length > 1" class="mt-4 inline-flex items-center gap-2 text-sm font-bold text-rose-700" type="button" @click="removeItem(index)"><TrashIcon :size="17" /> Remove pair</button></fieldset></div>
-        </section>
+        <section class="form-section"><div class="flex items-center justify-between gap-4"><div><h2 class="section-title">Registered footwear</h2><p class="mt-1 text-sm text-muted">Choose every pair brought in today.</p></div><button class="button-secondary" type="button" @click="addNew"><PlusIcon :size="17" /> New pair</button></div><div v-if="selectedClient.shoes.length" class="mt-5 grid gap-3 sm:grid-cols-2"><button v-for="shoe in selectedClient.shoes" :key="shoe.id" type="button" class="flex items-start gap-3 rounded-lg border p-4 text-left hover:border-sky hover:bg-sky-soft" :class="order.sessions.some((entry) => entry.shoe_id === shoe.id) ? 'border-sky bg-sky-soft' : 'border-line'" @click="addExisting(shoe)"><span class="grid size-11 shrink-0 place-items-center rounded-lg bg-canvas text-sky-deep"><ShoeIcon :size="24" /></span><span><strong class="block text-navy">{{ shoe.display_name }}</strong><span class="mt-1 block text-xs font-semibold text-muted">{{ shoe.reference }}<template v-if="shoe.size"> · Size {{ shoe.size }}</template></span><span v-if="order.sessions.some((entry) => entry.shoe_id === shoe.id)" class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-sky-deep"><CheckIcon :size="14" /> Added to intake</span></span></button></div><p v-else class="mt-5 rounded-lg bg-canvas p-4 text-sm text-muted">No footwear is registered for this client yet. Add their first pair.</p></section>
 
-        <section class="form-section"><h2 class="section-title">Condition photos</h2><label class="mt-5 flex cursor-pointer items-center gap-4 rounded-2xl border-2 border-dashed border-stone-300 p-5 hover:border-[#376b55] dark:border-stone-700"><span class="grid size-12 place-items-center rounded-xl bg-stone-100 dark:bg-stone-800"><CameraIcon :size="24" /></span><span><strong class="block">Add up to 6 photos</strong><span class="text-sm text-stone-500">JPG, PNG, or WebP. Maximum 6 MB each.</span></span><input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple @change="selectPhotos" /></label><p v-if="photos.length" class="mt-3 text-sm font-bold text-[#376b55] dark:text-[#9ee6c2]">{{ photos.length }} photo<span v-if="photos.length !== 1">s</span> selected</p></section>
+        <section class="form-section"><h2 class="section-title">Today’s care sessions</h2><div v-if="order.sessions.length" class="mt-5 space-y-5"><fieldset v-for="(session, index) in order.sessions" :key="`${session.shoe_id || 'new'}-${index}`" class="rounded-xl border border-line bg-canvas/50 p-4"><legend class="px-2 text-sm font-bold text-navy">Pair {{ index + 1 }} · {{ session.shoe_id ? session.shoe.display_name : 'New footwear' }}</legend><div v-if="!session.shoe_id" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><label class="field"><span>Footwear type</span><input v-model="session.shoe.shoe_type" required /></label><label class="field"><span>Brand</span><input v-model="session.shoe.brand" /></label><label class="field"><span>Model</span><input v-model="session.shoe.model" /></label><label class="field"><span>Colour</span><input v-model="session.shoe.color" /></label><label class="field"><span>Size</span><input v-model="session.shoe.size" /></label><label class="field sm:col-span-2 lg:col-span-3"><span>Identifying notes</span><input v-model="session.shoe.identifying_notes" placeholder="Marks or details that distinguish this pair" /></label></div><div class="mt-4 grid gap-4 sm:grid-cols-2"><label class="field"><span>Care service</span><select v-model="session.service"><option>Standard wash</option><option>Deep clean</option><option>Premium care</option><option>Re-clean</option></select></label><label class="field"><span>Price (UGX)</span><input v-model.number="session.unit_price" type="number" min="0" step="1000" required /></label><label class="field sm:col-span-2"><span>Condition at intake</span><textarea v-model="session.condition_notes" rows="2" placeholder="Existing marks, damage, or special instructions"></textarea></label><div class="sm:col-span-2"><p class="mb-2 text-sm font-semibold text-ink">Condition photos</p><MediaUploader v-model="session.photos" :max-files="6" /></div></div><div class="mt-3 flex items-center justify-between"><span class="text-xs font-semibold text-muted">{{ session.photos.length }} photos selected</span><button class="inline-flex items-center gap-1 text-sm font-bold text-rose-700" type="button" @click="removeSession(index)"><TrashIcon :size="16" /> Remove</button></div></fieldset></div><div v-else class="mt-5 rounded-lg border border-dashed border-[#b9d4e3] p-8 text-center"><ShoeIcon :size="30" class="mx-auto text-sky-deep" /><p class="mt-3 font-bold text-navy">No footwear selected</p><p class="mt-1 text-sm text-muted">Choose a registered pair above or add new footwear.</p></div></section>
       </div>
 
-      <aside class="h-fit rounded-2xl bg-[#16352a] p-6 text-stone-100 xl:sticky xl:top-8"><h2 class="text-xl font-black">Order summary</h2><dl class="mt-6 space-y-4 text-sm"><div class="flex justify-between"><dt class="text-[#b8d1c5]">Subtotal</dt><dd class="font-mono font-bold">{{ money(subtotal) }}</dd></div><div><label class="field field-dark"><span>Discount (UGX)</span><input v-model.number="form.discount" type="number" min="0" :max="subtotal" step="1000" /></label></div><div class="flex justify-between border-t border-[#456456] pt-4 text-lg"><dt class="font-black">Total</dt><dd class="font-mono font-black text-[#d7ff58]">{{ money(total) }}</dd></div><div><label class="field field-dark"><span>Deposit (UGX)</span><input v-model.number="form.deposit" type="number" min="0" :max="total" step="1000" /></label></div><div><label class="field field-dark"><span>Payment method</span><select v-model="form.payment_method"><option value="cash">Cash</option><option value="mobile_money">Mobile money</option><option value="card">Card</option><option value="bank">Bank</option></select></label></div><div><label class="field field-dark"><span>Due date</span><input v-model="form.due_at" type="datetime-local" /></label></div><div><label class="field field-dark"><span>Order notes</span><textarea v-model="form.notes" rows="3"></textarea></label></div></dl><div v-if="Object.keys(errors).length" class="mt-5 rounded-xl bg-rose-100 p-3 text-sm font-semibold text-rose-800">Please review the highlighted order details.</div><button class="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-[#d7ff58] px-4 py-3 font-black text-[#16352a] disabled:opacity-60" type="submit" :disabled="loading">{{ loading ? 'Saving order...' : 'Save order' }}</button></aside>
+      <aside class="h-fit rounded-xl bg-navy p-6 text-white shadow-[0_20px_50px_rgba(16,47,76,0.16)] xl:sticky xl:top-8"><p class="text-xs font-bold tracking-[0.12em] text-[#89d1f2]">SERVICE ORDER</p><h2 class="mt-2 text-xl font-bold">Intake summary</h2><dl class="mt-6 space-y-4 text-sm"><div class="flex justify-between"><dt class="text-[#afc8d8]">Pairs received</dt><dd class="font-bold">{{ order.sessions.length }}</dd></div><div class="flex justify-between"><dt class="text-[#afc8d8]">Subtotal</dt><dd class="font-bold">{{ money(subtotal) }}</dd></div><label class="field field-dark"><span>Discount (UGX)</span><input v-model.number="order.discount" type="number" min="0" :max="subtotal" step="1000" /></label><div class="flex justify-between border-t border-[#31536d] pt-4 text-lg"><dt class="font-bold">Total</dt><dd class="font-bold text-[#8bd6f7]">{{ money(total) }}</dd></div><label class="field field-dark"><span>Deposit (UGX)</span><input v-model.number="order.deposit" type="number" min="0" :max="total" step="1000" /></label><label class="field field-dark"><span>Payment method</span><select v-model="order.payment_method"><option value="cash">Cash</option><option value="mobile_money">Mobile money</option><option value="card">Card</option><option value="bank">Bank</option></select></label><label class="field field-dark"><span>Expected completion</span><input v-model="order.due_at" type="datetime-local" /></label><label class="field field-dark"><span>Internal order notes</span><textarea v-model="order.notes" rows="3"></textarea></label></dl><div v-if="Object.keys(errors).length" class="mt-5 rounded-lg bg-rose-100 p-3 text-sm font-semibold text-rose-800">{{ errors.connection?.[0] || 'Review the intake details and try again.' }}</div><button class="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-sky px-4 py-3 font-bold text-navy hover:bg-[#70c7ec] disabled:opacity-50" type="submit" :disabled="loading || !order.sessions.length">{{ loading ? 'Saving intake…' : 'Create service order' }}</button></aside>
     </form>
   </AppShell>
 </template>

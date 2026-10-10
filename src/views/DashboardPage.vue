@@ -17,8 +17,8 @@ onMounted(async () => {
 <template>
   <AppShell>
     <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-      <div><p class="text-sm font-bold text-[#376b55] dark:text-[#9ee6c2]">Today at Align</p><h1 class="mt-1 text-4xl font-black tracking-[-0.045em]">Operations overview</h1></div>
-      <RouterLink to="/orders/new" class="button-primary"><PlusIcon :size="18" weight="bold" /> New order</RouterLink>
+      <div><p class="eyebrow">Today at Align</p><h1 class="page-title">Operations overview</h1></div>
+      <RouterLink to="/orders/new" class="button-primary"><PlusIcon :size="18" weight="bold" /> New intake</RouterLink>
     </header>
 
     <div v-if="error" class="alert-error mt-8">{{ error }}</div>
@@ -33,9 +33,9 @@ onMounted(async () => {
       <section class="mt-10 grid gap-8 xl:grid-cols-[1.45fr_0.55fr]">
         <div>
           <div class="flex items-center justify-between"><h2 class="section-title">Recent orders</h2><RouterLink to="/orders" class="text-link">View all <ArrowRightIcon :size="16" /></RouterLink></div>
-          <div class="mt-4 overflow-hidden rounded-2xl border border-stone-200 bg-white dark:border-stone-800 dark:bg-stone-900">
-            <RouterLink v-for="order in data.recent_orders" :key="order.id" :to="`/orders/${order.id}`" class="grid gap-2 border-b border-stone-100 p-4 last:border-0 hover:bg-stone-50 dark:border-stone-800 dark:hover:bg-stone-800/60 sm:grid-cols-[1fr_auto] sm:items-center">
-              <div><div class="flex flex-wrap items-center gap-2"><strong>{{ order.reference }}</strong><StatusBadge :status="order.status" /></div><p class="mt-1 text-sm text-stone-500">{{ order.client.name }}, {{ order.items.length }} pair<span v-if="order.items.length !== 1">s</span>, {{ dateTime(order.received_at) }}</p></div>
+          <div class="data-panel mt-4">
+            <RouterLink v-for="order in data.recent_orders" :key="order.id" :to="`/orders/${order.id}`" class="grid gap-2 border-b border-line p-4 last:border-0 hover:bg-sky-soft sm:grid-cols-[1fr_auto] sm:items-center">
+              <div><div class="flex flex-wrap items-center gap-2"><strong class="text-navy">{{ order.reference }}</strong><StatusBadge :status="order.status" /></div><p class="mt-1 text-sm text-muted">{{ order.client.name }}, {{ order.cleaning_sessions.length }} pair<span v-if="order.cleaning_sessions.length !== 1">s</span>, {{ dateTime(order.received_at) }}</p></div>
               <strong class="font-mono text-sm">{{ money(order.total) }}</strong>
             </RouterLink>
           </div>
@@ -43,7 +43,7 @@ onMounted(async () => {
         <div>
           <h2 class="section-title">Work queue</h2>
           <div class="mt-4 grid grid-cols-2 gap-3">
-            <div v-for="(total, status) in data.status_counts" :key="status" class="rounded-2xl border border-stone-200 bg-white p-4 dark:border-stone-800 dark:bg-stone-900"><StatusBadge :status="status" /><strong class="mt-5 block font-mono text-3xl">{{ total }}</strong></div>
+            <div v-for="(total, status) in data.status_counts" :key="status" class="rounded-xl border border-line bg-white p-4"><StatusBadge :status="status" /><strong class="mt-5 block text-3xl font-bold text-navy">{{ total }}</strong></div>
           </div>
         </div>
       </section>
