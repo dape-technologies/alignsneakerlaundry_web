@@ -1,165 +1,78 @@
+@import "@fontsource-variable/outfit";
+@import "@uppy/vue/css/style.css";
+@import "@uppy/vue/css/image-editor.css";
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --font-sans: "Outfit Variable", "Avenir Next", "Segoe UI", sans-serif;
+  --font-mono: "Outfit Variable", "Avenir Next", "Segoe UI", sans-serif;
+  --color-canvas: #f6fafd;
+  --color-surface: #ffffff;
+  --color-navy: #102f4c;
+  --color-navy-hover: #173f62;
+  --color-sky: #38a9e0;
+  --color-sky-deep: #1886bd;
+  --color-sky-soft: #eaf6fc;
+  --color-ink: #142536;
+  --color-muted: #64788a;
+  --color-line: #d9e7f0;
 }
 
 @layer base {
-  :root {
-    color-scheme: light dark;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-  }
-
-  * {
-    @apply border-stone-200 dark:border-stone-800;
-  }
-
-  body {
-    @apply m-0 min-w-80 bg-stone-100 antialiased dark:bg-stone-950;
-  }
-
-  button,
-  a,
-  input,
-  select,
-  textarea {
-    @apply outline-none;
-  }
-
-  button:focus-visible,
-  a:focus-visible,
-  input:focus-visible,
-  select:focus-visible,
-  textarea:focus-visible {
-    @apply ring-2 ring-[#376b55] ring-offset-2 ring-offset-stone-100 dark:ring-[#9ee6c2] dark:ring-offset-stone-950;
-  }
-
-  button:active,
-  a:active {
-    transform: translateY(1px);
-  }
+  :root { color-scheme: light; font-synthesis: none; text-rendering: optimizeLegibility; }
+  * { @apply border-line; }
+  html { scroll-behavior: smooth; }
+  body { @apply m-0 min-w-80 bg-canvas text-ink antialiased; }
+  button, a, input, select, textarea { @apply outline-none; }
+  button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { @apply ring-2 ring-sky ring-offset-2 ring-offset-white; }
+  button:active, a:active { transform: translateY(1px); }
+  button, a { @apply transition duration-200; }
+  strong, .font-mono { font-variant-numeric: tabular-nums; }
 }
 
 @layer components {
-  .button-primary {
-    @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-[#16352a] px-4 py-2.5 text-sm font-black text-stone-50 transition-colors hover:bg-[#244c3d] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#d7ff58] dark:text-[#16352a] dark:hover:bg-[#c6ed4e];
-  }
-
-  .button-secondary {
-    @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-stone-300 bg-transparent px-4 py-2.5 text-sm font-black text-stone-800 transition-colors hover:bg-stone-200 dark:border-stone-700 dark:text-stone-100 dark:hover:bg-stone-800;
-  }
-
-  .icon-button {
-    @apply grid size-10 place-items-center rounded-xl text-stone-700 hover:bg-stone-200 dark:text-stone-200 dark:hover:bg-stone-800;
-  }
-
-  .nav-link {
-    @apply flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-stone-600 transition-colors hover:bg-stone-200 hover:text-stone-950 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white;
-  }
-
-  .nav-link.router-link-active {
-    @apply bg-[#d7ff58] text-[#16352a] hover:bg-[#d7ff58];
-  }
-
-  .field {
-    @apply grid gap-2 text-sm font-bold text-stone-700 dark:text-stone-200;
-  }
-
-  .field input,
-  .field select,
-  .field textarea,
-  .input {
-    @apply min-h-11 w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base font-medium text-stone-950 placeholder:text-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500;
-  }
-
-  .field textarea {
-    @apply resize-y;
-  }
-
-  .field small {
-    @apply font-semibold text-rose-700 dark:text-rose-300;
-  }
-
-  .field-dark {
-    @apply text-stone-100;
-  }
-
-  .field-dark input,
-  .field-dark select,
-  .field-dark textarea {
-    @apply border-[#527162] bg-[#10291f] text-stone-100 placeholder:text-[#9bb5a8];
-  }
-
-  .form-section {
-    @apply rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900 sm:p-6;
-  }
-
-  .section-title {
-    @apply text-xl font-black tracking-[-0.025em];
-  }
-
-  .metric-block {
-    @apply rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900;
-  }
-
-  .metric-block p {
-    @apply mt-6 text-sm font-bold text-stone-500;
-  }
-
-  .metric-block strong {
-    @apply mt-1 block font-mono text-3xl tracking-[-0.04em];
-  }
-
-  .metric-block span {
-    @apply mt-2 block text-sm text-stone-500;
-  }
-
-  .metric-icon {
-    @apply grid size-11 place-items-center rounded-xl bg-[#e4efe9] text-[#24523f] dark:bg-[#17382b] dark:text-[#9ee6c2];
-  }
-
-  .text-link {
-    @apply inline-flex items-center gap-1.5 text-sm font-black text-[#376b55] hover:underline dark:text-[#9ee6c2];
-  }
-
-  .search-box {
-    @apply flex min-h-11 items-center gap-3 rounded-xl border border-stone-300 bg-white px-3 text-stone-500 dark:border-stone-700 dark:bg-stone-900;
-  }
-
-  .search-box input {
-    @apply h-11 w-full bg-transparent text-base font-medium text-stone-950 placeholder:text-stone-500 dark:text-stone-100;
-  }
-
-  .alert-error {
-    @apply rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200;
-  }
-
-  .empty-state {
-    @apply grid min-h-72 place-items-center content-center rounded-2xl border border-dashed border-stone-300 bg-white p-8 text-center text-stone-500 dark:border-stone-700 dark:bg-stone-900;
-  }
-
-  .empty-state h2 {
-    @apply mt-4 text-xl font-black text-stone-950 dark:text-stone-100;
-  }
-
-  .empty-state p {
-    @apply mt-2 max-w-sm text-sm;
-  }
-
-  .skeleton {
-    @apply animate-pulse rounded-2xl bg-stone-200 dark:bg-stone-800;
-  }
+  .button-primary { @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-navy px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(16,47,76,0.12)] hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-55; }
+  .button-secondary { @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-bold text-ink hover:border-sky hover:bg-sky-soft disabled:cursor-not-allowed disabled:opacity-55; }
+  .button-tertiary { @apply inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-bold text-sky-deep hover:bg-sky-soft; }
+  .icon-button { @apply grid size-10 place-items-center rounded-lg text-muted hover:bg-sky-soft hover:text-navy; }
+  .nav-link { @apply relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-muted hover:bg-sky-soft hover:text-navy; }
+  .nav-link.router-link-active { @apply bg-sky-soft text-navy; }
+  .nav-link.router-link-active::before { content: ""; @apply absolute inset-y-2 left-0 w-0.5 rounded-full bg-sky; }
+  .field { @apply grid gap-2 text-sm font-semibold text-ink; }
+  .field input, .field select, .field textarea, .input { @apply min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-base font-medium text-ink placeholder:text-muted hover:border-[#bdd4e1] focus:border-sky; }
+  .field textarea { @apply resize-y; }
+  .field small { @apply font-semibold text-rose-700; }
+  .field-dark { @apply text-white; }
+  .field-dark input, .field-dark select, .field-dark textarea { @apply border-[#31536d] bg-[#0b2941] text-white placeholder:text-[#9ab6c8] focus:border-sky; }
+  .form-section { @apply rounded-xl border border-line bg-white p-5 shadow-[0_10px_32px_rgba(29,79,111,0.045)] sm:p-6; }
+  .section-title { @apply text-xl font-bold tracking-[-0.025em] text-navy; }
+  .eyebrow { @apply text-sm font-bold text-sky-deep; }
+  .page-title { @apply mt-1 text-3xl font-bold tracking-[-0.045em] text-navy sm:text-4xl; }
+  .metric-block { @apply rounded-xl border border-line bg-white p-5 shadow-[0_10px_32px_rgba(29,79,111,0.04)]; }
+  .metric-block p { @apply mt-6 text-sm font-semibold text-muted; }
+  .metric-block strong { @apply mt-1 block text-3xl font-bold tracking-[-0.04em] text-navy; }
+  .metric-block span { @apply mt-2 block text-sm text-muted; }
+  .metric-icon { @apply grid size-11 place-items-center rounded-lg bg-sky-soft text-sky-deep; }
+  .text-link { @apply inline-flex items-center gap-1.5 text-sm font-bold text-sky-deep hover:text-navy hover:underline; }
+  .search-box { @apply flex min-h-11 items-center gap-3 rounded-lg border border-line bg-white px-3 text-muted hover:border-[#bdd4e1] focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/15; }
+  .search-box input { @apply h-11 w-full bg-transparent text-base font-medium text-ink placeholder:text-muted; }
+  .alert-error { @apply rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-800; }
+  .alert-info { @apply rounded-lg border border-[#c7e7f7] bg-sky-soft p-4 text-sm font-semibold text-navy; }
+  .empty-state { @apply grid min-h-72 place-items-center content-center rounded-xl border border-dashed border-[#bfd7e5] bg-white p-8 text-center text-muted; }
+  .empty-state h2 { @apply mt-4 text-xl font-bold text-navy; }
+  .empty-state p { @apply mt-2 max-w-sm text-sm; }
+  .skeleton { @apply animate-pulse rounded-xl bg-[#e5eff5]; }
+  .data-panel { @apply overflow-hidden rounded-xl border border-line bg-white shadow-[0_10px_32px_rgba(29,79,111,0.035)]; }
+  .media-uploader { @apply overflow-hidden rounded-xl border border-line bg-white; }
+  .media-uploader .uppy-Dashboard-inner { @apply border-0 bg-white; }
+  .media-uploader .uppy-Dashboard-AddFiles { @apply border-0 bg-sky-soft/40; }
+  .media-uploader .uppy-Dashboard-AddFiles-title { @apply text-base font-semibold text-navy; }
+  .media-uploader .uppy-Dashboard-browse { @apply font-bold text-sky-deep; }
+  .media-uploader .uppy-Dashboard-note { @apply text-muted; }
+  .media-uploader .uppy-Dashboard-Item-name { @apply font-semibold text-ink; }
+  .media-uploader .uppy-DashboardContent-bar { @apply border-line bg-white; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }

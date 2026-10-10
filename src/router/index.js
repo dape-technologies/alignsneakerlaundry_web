@@ -1,26 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import HomePage from '../views/HomePage.vue'
-import LoginPage from '../views/LoginPage.vue'
-import DashboardPage from '../views/DashboardPage.vue'
-import OrdersPage from '../views/OrdersPage.vue'
-import NewOrderPage from '../views/NewOrderPage.vue'
-import OrderDetailPage from '../views/OrderDetailPage.vue'
-import ClientsPage from '../views/ClientsPage.vue'
-import ReportsPage from '../views/ReportsPage.vue'
+
+const LoginPage = () => import('../views/LoginPage.vue')
+const DashboardPage = () => import('../views/DashboardPage.vue')
+const OrdersPage = () => import('../views/OrdersPage.vue')
+const NewOrderPage = () => import('../views/NewOrderPage.vue')
+const OrderDetailPage = () => import('../views/OrderDetailPage.vue')
+const ClientsPage = () => import('../views/ClientsPage.vue')
+const ClientDetailPage = () => import('../views/ClientDetailPage.vue')
+const ReportsPage = () => import('../views/ReportsPage.vue')
+const NotFoundPage = () => import('../views/NotFoundPage.vue')
 
 const router = createRouter({
   history: createWebHistory(),
   scrollBehavior: () => ({ top: 0 }),
   routes: [
-    { path: '/', component: HomePage },
+    { path: '/', redirect: '/login' },
     { path: '/login', component: LoginPage, meta: { guest: true } },
     { path: '/dashboard', component: DashboardPage, meta: { auth: true } },
     { path: '/orders', component: OrdersPage, meta: { auth: true } },
     { path: '/orders/new', component: NewOrderPage, meta: { auth: true } },
     { path: '/orders/:id', component: OrderDetailPage, meta: { auth: true } },
     { path: '/clients', component: ClientsPage, meta: { auth: true } },
+    { path: '/clients/:id', component: ClientDetailPage, meta: { auth: true } },
     { path: '/reports', component: ReportsPage, meta: { auth: true, admin: true } },
+    { path: '/:pathMatch(.*)*', component: NotFoundPage },
   ],
 })
 
