@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+}
+
+@layer base {
+  :root {
+    color-scheme: light dark;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    @apply border-stone-200 dark:border-stone-800;
+  }
+
+  body {
+    @apply m-0 min-w-80 bg-stone-100 antialiased dark:bg-stone-950;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    @apply outline-none;
+  }
+
+  button:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply ring-2 ring-[#376b55] ring-offset-2 ring-offset-stone-100 dark:ring-[#9ee6c2] dark:ring-offset-stone-950;
+  }
+
+  button:active,
+  a:active {
+    transform: translateY(1px);
+  }
+}
+
+@layer components {
+  .button-primary {
+    @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl bg-[#16352a] px-4 py-2.5 text-sm font-black text-stone-50 transition-colors hover:bg-[#244c3d] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#d7ff58] dark:text-[#16352a] dark:hover:bg-[#c6ed4e];
+  }
+
+  .button-secondary {
+    @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-xl border border-stone-300 bg-transparent px-4 py-2.5 text-sm font-black text-stone-800 transition-colors hover:bg-stone-200 dark:border-stone-700 dark:text-stone-100 dark:hover:bg-stone-800;
+  }
+
+  .icon-button {
+    @apply grid size-10 place-items-center rounded-xl text-stone-700 hover:bg-stone-200 dark:text-stone-200 dark:hover:bg-stone-800;
+  }
+
+  .nav-link {
+    @apply flex min-h-11 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-stone-600 transition-colors hover:bg-stone-200 hover:text-stone-950 dark:text-stone-300 dark:hover:bg-stone-800 dark:hover:text-white;
+  }
+
+  .nav-link.router-link-active {
+    @apply bg-[#d7ff58] text-[#16352a] hover:bg-[#d7ff58];
+  }
+
+  .field {
+    @apply grid gap-2 text-sm font-bold text-stone-700 dark:text-stone-200;
+  }
+
+  .field input,
+  .field select,
+  .field textarea,
+  .input {
+    @apply min-h-11 w-full rounded-xl border border-stone-300 bg-white px-3 py-2.5 text-base font-medium text-stone-950 placeholder:text-stone-500 dark:border-stone-700 dark:bg-stone-950 dark:text-stone-100 dark:placeholder:text-stone-500;
+  }
+
+  .field textarea {
+    @apply resize-y;
+  }
+
+  .field small {
+    @apply font-semibold text-rose-700 dark:text-rose-300;
+  }
+
+  .field-dark {
+    @apply text-stone-100;
+  }
+
+  .field-dark input,
+  .field-dark select,
+  .field-dark textarea {
+    @apply border-[#527162] bg-[#10291f] text-stone-100 placeholder:text-[#9bb5a8];
+  }
+
+  .form-section {
+    @apply rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900 sm:p-6;
+  }
+
+  .section-title {
+    @apply text-xl font-black tracking-[-0.025em];
+  }
+
+  .metric-block {
+    @apply rounded-2xl border border-stone-200 bg-white p-5 dark:border-stone-800 dark:bg-stone-900;
+  }
+
+  .metric-block p {
+    @apply mt-6 text-sm font-bold text-stone-500;
+  }
+
+  .metric-block strong {
+    @apply mt-1 block font-mono text-3xl tracking-[-0.04em];
+  }
+
+  .metric-block span {
+    @apply mt-2 block text-sm text-stone-500;
+  }
+
+  .metric-icon {
+    @apply grid size-11 place-items-center rounded-xl bg-[#e4efe9] text-[#24523f] dark:bg-[#17382b] dark:text-[#9ee6c2];
+  }
+
+  .text-link {
+    @apply inline-flex items-center gap-1.5 text-sm font-black text-[#376b55] hover:underline dark:text-[#9ee6c2];
+  }
+
+  .search-box {
+    @apply flex min-h-11 items-center gap-3 rounded-xl border border-stone-300 bg-white px-3 text-stone-500 dark:border-stone-700 dark:bg-stone-900;
+  }
+
+  .search-box input {
+    @apply h-11 w-full bg-transparent text-base font-medium text-stone-950 placeholder:text-stone-500 dark:text-stone-100;
+  }
+
+  .alert-error {
+    @apply rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm font-bold text-rose-800 dark:border-rose-900 dark:bg-rose-950 dark:text-rose-200;
+  }
+
+  .empty-state {
+    @apply grid min-h-72 place-items-center content-center rounded-2xl border border-dashed border-stone-300 bg-white p-8 text-center text-stone-500 dark:border-stone-700 dark:bg-stone-900;
+  }
+
+  .empty-state h2 {
+    @apply mt-4 text-xl font-black text-stone-950 dark:text-stone-100;
+  }
+
+  .empty-state p {
+    @apply mt-2 max-w-sm text-sm;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-2xl bg-stone-200 dark:bg-stone-800;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
