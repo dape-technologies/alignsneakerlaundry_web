@@ -11,13 +11,26 @@ import { useAuthStore } from '../stores/auth'
 const auth = useAuthStore()
 const router = useRouter()
 const menuOpen = ref(false)
+const signingOut = ref(false)
 const navigation = [
   { label: 'Overview', to: '/dashboard', icon: HouseIcon },
   { label: 'Service orders', to: '/orders', icon: ListChecksIcon },
   { label: 'Clients & footwear', to: '/clients', icon: UsersIcon },
 ]
 
-async function logout() { await auth.logout(); router.push('/login') }
+async function logout() {
+  if (signingOut.value) return
+  signingOut.value = true
+  try {
+    await auth.logout()
+  } catch {
+    // Local sign-out still completes when the server session has already expired.
+  } finally {
+    menuOpen.value = false
+    await router.replace('/login')
+    signingOut.value = false
+  }
+}
 </script>
 
 <template>
@@ -28,17 +41,17 @@ async function logout() { await auth.logout(); router.push('/login') }
         <span class="leading-tight"><strong class="block text-navy">Align</strong><span class="text-xs font-semibold text-muted">Sneaker Laundry · Ops</span></span>
       </RouterLink>
 
-      <RouterLink to="/orders/new" class="button-primary mb-7 w-full justify-center"><PlusIcon :size="18" weight="bold" /> New intake</RouterLink>
       <nav class="space-y-1" aria-label="Workspace navigation">
         <RouterLink v-for="item in navigation" :key="item.to" :to="item.to" class="nav-link">
           <component :is="item.icon" :size="20" weight="bold" /> {{ item.label }}
         </RouterLink>
         <RouterLink v-if="auth.isAdmin" to="/reports" class="nav-link"><ChartBarIcon :size="20" weight="bold" /> Reports</RouterLink>
+        <RouterLink to="/orders/new" class="button-primary mt-4 w-full justify-center"><PlusIcon :size="18" weight="bold" /> New intake</RouterLink>
       </nav>
 
       <div class="mt-auto border-t border-line pt-5">
         <div class="rounded-lg bg-sky-soft px-3 py-3"><p class="text-sm font-bold text-navy">{{ auth.user?.name }}</p><p class="mt-0.5 text-xs font-semibold capitalize text-muted">{{ auth.user?.role }} access</p></div>
-        <button class="nav-link mt-2 w-full" type="button" @click="logout"><SignOutIcon :size="20" weight="bold" /> Sign out</button>
+        <button class="nav-link mt-2 w-full" type="button" :disabled="signingOut" @click="logout"><SignOutIcon :size="20" weight="bold" /> {{ signingOut ? 'Signing out…' : 'Sign out' }}</button>
       </div>
     </aside>
 
@@ -50,12 +63,12 @@ async function logout() { await auth.logout(); router.push('/login') }
     <div v-if="menuOpen" class="fixed inset-0 z-40 bg-navy/35 backdrop-blur-sm lg:hidden" @click.self="menuOpen = false">
       <aside class="ml-auto flex min-h-[100dvh] w-76 flex-col bg-white p-5 shadow-2xl">
         <button class="icon-button ml-auto" type="button" aria-label="Close navigation" @click="menuOpen = false"><XIcon :size="22" /></button>
-        <RouterLink to="/orders/new" class="button-primary mt-5 justify-center" @click="menuOpen = false"><PlusIcon :size="18" /> New intake</RouterLink>
         <nav class="mt-6 space-y-1">
           <RouterLink v-for="item in navigation" :key="item.to" :to="item.to" class="nav-link" @click="menuOpen = false"><component :is="item.icon" :size="20" weight="bold" /> {{ item.label }}</RouterLink>
           <RouterLink v-if="auth.isAdmin" to="/reports" class="nav-link" @click="menuOpen = false"><ChartBarIcon :size="20" /> Reports</RouterLink>
+          <RouterLink to="/orders/new" class="button-primary mt-4 justify-center" @click="menuOpen = false"><PlusIcon :size="18" weight="bold" /> New intake</RouterLink>
         </nav>
-        <button class="nav-link mt-auto" type="button" @click="logout"><SignOutIcon :size="20" /> Sign out</button>
+        <button class="nav-link mt-auto" type="button" :disabled="signingOut" @click="logout"><SignOutIcon :size="20" /> {{ signingOut ? 'Signing out…' : 'Sign out' }}</button>
       </aside>
     </div>
 

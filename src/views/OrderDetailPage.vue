@@ -17,8 +17,7 @@ const formErrors = ref({})
 const sessionForms = reactive({})
 const paymentForm = reactive({ amount: '', method: 'cash', reference: '' })
 const transitions = {
-  received: ['cleaning', 'cancelled'], cleaning: ['drying', 'cancelled'],
-  drying: ['quality_check', 'cleaning', 'cancelled'], quality_check: ['ready_for_collection', 'cleaning', 'cancelled'],
+  received: ['cleaning', 'cancelled'], cleaning: ['ready_for_collection', 'cancelled'],
   ready_for_collection: ['collected', 'cleaning'], collected: [], cancelled: [],
 }
 
@@ -27,7 +26,7 @@ async function loadOrder() { try { order.value = (await api.get(`/orders/${route
 async function updateStatus(session) {
   if (!navigator.onLine) { formErrors.value = { status: ['A connection is required to update care progress.'] }; return }
   busySession.value = session.id; formErrors.value = {}
-  try { await api.patch(`/cleaning-sessions/${session.id}/status`, sessionForms[session.id]); await loadOrder() }
+  try { await api.patch(`/cleaning-sessions/${session.id}/status`, { ...sessionForms[session.id], expected_status: session.status }); await loadOrder() }
   catch (requestError) { formErrors.value = validationErrors(requestError) }
   finally { busySession.value = null }
 }
