@@ -35,7 +35,7 @@ onMounted(loadOrders)
 
     <section class="mt-8 grid gap-3 sm:grid-cols-[1fr_220px]">
       <label class="search-box"><MagnifyingGlassIcon :size="19" /><span class="sr-only">Search orders</span><input v-model="search" type="search" placeholder="Search reference, name, or phone" /></label>
-      <select v-model="status" class="input"><option value="">All care stages</option><option v-for="value in ['received','cleaning','drying','quality_check','ready_for_collection','collected','cancelled']" :key="value" :value="value">{{ statusLabel(value) }}</option></select>
+      <select v-model="status" class="input"><option value="">All care stages</option><option v-for="value in ['received','cleaning','ready_for_collection','collected','cancelled']" :key="value" :value="value">{{ statusLabel(value) }}</option></select>
     </section>
 
     <div v-if="error" class="alert-error mt-6">{{ error }}</div>
