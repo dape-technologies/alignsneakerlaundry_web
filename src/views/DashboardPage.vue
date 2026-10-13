@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   PhArrowRight as ArrowRightIcon,
   PhCheckCircle as CheckCircleIcon,
@@ -27,6 +27,7 @@ const selectedStage = ref('all')
 const busySession = ref(null)
 const pendingMove = ref(null)
 const moveLocks = new Set()
+let noticeTimer
 
 const stages = [
   { status: 'received', label: 'Received', icon: TrayIcon },
@@ -71,6 +72,14 @@ function setBoardSessions(sessions) {
   receivedSessions.value = sessions.filter((session) => session.status === 'received')
   cleaningSessions.value = sessions.filter((session) => session.status === 'cleaning')
   readySessions.value = sessions.filter((session) => session.status === 'ready_for_collection')
+}
+
+function showNotice(message) {
+  window.clearTimeout(noticeTimer)
+  notice.value = message
+  noticeTimer = window.setTimeout(() => {
+    notice.value = ''
+  }, 2200)
 }
 
 async function loadDashboard() {
@@ -118,7 +127,7 @@ async function persistMove(session, from, to) {
       expected_status: from,
       notes: 'Updated from the care board.',
     })
-    notice.value = `${session.shoe.reference} moved successfully.`
+    showNotice(`${session.shoe.reference} moved`)
   } catch (requestError) {
     error.value = requestError.response?.data?.errors?.status?.[0]
       || requestError.response?.data?.message
@@ -141,6 +150,7 @@ async function cancelReady() {
 }
 
 onMounted(loadDashboard)
+onBeforeUnmount(() => window.clearTimeout(noticeTimer))
 </script>
 
 <template>
@@ -153,7 +163,12 @@ onMounted(loadDashboard)
     </header>
 
     <div v-if="error" class="alert-error mt-6" role="alert">{{ error }}</div>
-    <div v-if="notice" class="mt-6 rounded-lg border border-[#b8dfcf] bg-[#edf8f3] px-4 py-3 text-sm font-semibold text-[#245f4c]" role="status">{{ notice }}</div>
+    <Transition name="toast">
+      <div v-if="notice" class="board-toast" role="status" aria-live="polite">
+        <CheckCircleIcon :size="15" weight="fill" />
+        {{ notice }}
+      </div>
+    </Transition>
 
     <div v-if="!data" class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Loading dashboard">
       <div v-for="index in 4" :key="index" class="skeleton h-32"></div>
@@ -309,11 +324,16 @@ onMounted(loadDashboard)
 .workflow-table th { padding: .85rem 1rem; background: #f4f9fc; color: #668096; font-size: .7rem; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
 .workflow-table td { padding: 1rem; border-top: 1px solid var(--color-line); }
 .care-board { display: grid; grid-template-columns: repeat(3, minmax(18rem, 1fr)); gap: 1rem; min-width: 58rem; }
+.board-toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 70; display: inline-flex; max-width: calc(100vw - 2rem); align-items: center; gap: .4rem; padding: .5rem .65rem; border: 1px solid #b8dfcf; border-radius: .55rem; background: #edf8f3; color: #245f4c; box-shadow: 0 10px 28px rgba(9, 29, 45, .14); font-size: .75rem; font-weight: 700; line-height: 1; pointer-events: none; }
+.toast-enter-active, .toast-leave-active { transition: opacity .16s ease, transform .16s ease; }
+.toast-enter-from, .toast-leave-to { opacity: 0; transform: translateY(.4rem); }
 .dialog-backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 1rem; background: rgba(9, 29, 45, .5); backdrop-filter: blur(3px); }
 .confirm-dialog { width: min(100%, 25rem); padding: 1.5rem; border: 1px solid #d4e4ed; border-radius: 1rem; background: white; box-shadow: 0 24px 70px rgba(9, 29, 45, .22); }
 @media (max-width: 640px) {
   .pipeline-track { min-width: 40rem; grid-template-columns: minmax(10rem, 1fr) 2rem minmax(10rem, 1fr) 2rem minmax(10rem, 1fr); }
   .pipeline-step { min-height: 5.75rem; padding: .85rem; }
   .pipeline-step b { font-size: 1.4rem; }
+  .board-toast { right: auto; left: 50%; transform: translateX(-50%); }
+  .toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, .4rem); }
 }
 </style>
