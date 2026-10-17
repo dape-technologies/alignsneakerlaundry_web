@@ -16,7 +16,6 @@ let cleanup
 const actionLabels = {
   received: 'Start cleaning',
   cleaning: 'Mark ready',
-  ready_for_collection: 'Mark collected',
 }
 
 onMounted(() => {
@@ -67,7 +66,7 @@ onBeforeUnmount(() => cleanup?.())
         <span class="block text-sm font-semibold text-navy">{{ session.order.client.name }}</span>
         <RouterLink :to="`/orders/${session.order.id}`" data-no-drag draggable="false" class="text-xs font-bold text-muted hover:text-sky-deep">{{ session.order.reference }}</RouterLink>
       </div>
-      <button type="button" data-no-drag class="card-action" :disabled="busy" @pointerdown.stop @click.stop="emit('action', session)">
+      <button v-if="actionLabels[session.status]" type="button" data-no-drag class="card-action" :disabled="busy" @pointerdown.stop @click.stop="emit('action', session)">
         {{ actionLabels[session.status] }} <ArrowRightIcon :size="14" />
       </button>
     </div>

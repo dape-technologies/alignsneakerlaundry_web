@@ -42,10 +42,7 @@ const dragNextStage = {
 
 const activeStageNames = stages.map((stage) => stage.status)
 
-const actionNextStage = {
-  ...dragNextStage,
-  ready_for_collection: 'collected',
-}
+const actionNextStage = { ...dragNextStage }
 
 const receivedSessions = ref([])
 const cleaningSessions = ref([])

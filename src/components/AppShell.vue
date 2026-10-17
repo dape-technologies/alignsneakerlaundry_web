@@ -35,7 +35,7 @@ async function logout() {
 
 <template>
   <div class="min-h-[100dvh] bg-canvas text-ink">
-    <aside class="fixed inset-y-0 left-0 z-30 hidden w-68 border-r border-line bg-white px-4 py-5 lg:flex lg:flex-col">
+    <aside class="shell-sidebar fixed inset-y-0 left-0 z-30 hidden w-68 border-r border-line bg-white px-4 py-5 lg:flex lg:flex-col">
       <RouterLink to="/dashboard" class="mb-9 flex items-center gap-3 rounded-lg px-2 py-1">
         <span class="relative grid size-10 place-items-center rounded-lg bg-navy text-lg font-bold text-white">A<span class="absolute right-1 top-1 size-2 rounded-full bg-sky"></span></span>
         <span class="leading-tight"><strong class="block text-navy">Align</strong><span class="text-xs font-semibold text-muted">Sneaker Laundry · Ops</span></span>
@@ -55,7 +55,7 @@ async function logout() {
       </div>
     </aside>
 
-    <header class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur lg:hidden">
+    <header class="shell-mobile-header sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur lg:hidden">
       <RouterLink to="/dashboard" class="flex items-center gap-2 font-bold text-navy"><span class="grid size-8 place-items-center rounded-lg bg-navy text-white">A</span> Align Operations</RouterLink>
       <button class="icon-button" type="button" aria-label="Open navigation" @click="menuOpen = true"><ListIcon :size="24" /></button>
     </header>
@@ -72,6 +72,6 @@ async function logout() {
       </aside>
     </div>
 
-    <main id="main-content" class="lg:pl-68"><div class="mx-auto w-full max-w-[1440px] p-4 pb-12 sm:p-6 lg:p-9"><slot /></div></main>
+    <main id="main-content" class="shell-main lg:pl-68"><div class="shell-content mx-auto w-full max-w-[1440px] p-4 pb-12 sm:p-6 lg:p-9"><slot /></div></main>
   </div>
 </template>
