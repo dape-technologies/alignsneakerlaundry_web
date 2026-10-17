@@ -9,6 +9,7 @@ const OrderDetailPage = () => import('../views/OrderDetailPage.vue')
 const ClientsPage = () => import('../views/ClientsPage.vue')
 const ClientDetailPage = () => import('../views/ClientDetailPage.vue')
 const ReportsPage = () => import('../views/ReportsPage.vue')
+const AttendantsPage = () => import('../views/AttendantsPage.vue')
 const NotFoundPage = () => import('../views/NotFoundPage.vue')
 
 const router = createRouter({
@@ -24,6 +25,7 @@ const router = createRouter({
     { path: '/clients', component: ClientsPage, meta: { auth: true } },
     { path: '/clients/:id', component: ClientDetailPage, meta: { auth: true } },
     { path: '/reports', component: ReportsPage, meta: { auth: true, admin: true } },
+    { path: '/attendants', component: AttendantsPage, meta: { auth: true, admin: true } },
     { path: '/:pathMatch(.*)*', component: NotFoundPage },
   ],
 })

@@ -1,7 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
-  PhArrowRight as ArrowRightIcon,
   PhCheckCircle as CheckCircleIcon,
   PhClock as ClockIcon,
   PhCurrencyCircleDollar as CurrencyCircleDollarIcon,
@@ -10,11 +9,9 @@ import {
   PhTray as TrayIcon,
   PhUsers as UsersIcon,
   PhWashingMachine as WashingMachineIcon,
-  PhX as CloseIcon,
 } from '@phosphor-icons/vue'
 import AppShell from '../components/AppShell.vue'
 import CareBoardColumn from '../components/CareBoardColumn.vue'
-import StatusBadge from '../components/StatusBadge.vue'
 import { useAuthStore } from '../stores/auth'
 import { api } from '../services/api'
 import { dateTime, money } from '../lib/format'
@@ -23,9 +20,11 @@ const auth = useAuthStore()
 const data = ref(null)
 const error = ref('')
 const notice = ref('')
-const selectedStage = ref('all')
+const selectedStage = ref('received')
 const busySession = ref(null)
 const pendingMove = ref(null)
+const touchDrag = ref(null)
+const touchDropStage = ref(null)
 const moveLocks = new Set()
 let noticeTimer
 
@@ -54,12 +53,9 @@ const boardColumns = [
   { ...stages[2], sessions: readySessions },
 ]
 
-const filteredSessions = computed(() => {
-  const sessions = data.value?.active_sessions || []
-  return selectedStage.value === 'all'
-    ? sessions
-    : sessions.filter((session) => session.status === selectedStage.value)
-})
+const selectedStageSessions = computed(() => (data.value?.active_sessions || [])
+  .filter((session) => session.status === selectedStage.value))
+const selectedStageLabel = computed(() => stages.find((stage) => stage.status === selectedStage.value)?.label || '')
 
 function stageCount(status) {
   return data.value?.pipeline_counts?.[status] || 0
@@ -100,6 +96,51 @@ function handleBoardMove({ sessionId, from, to }) {
   session.status = to
   setBoardSessions(data.value.active_sessions)
   requestMove(session, to, from)
+}
+
+function columnAtPoint(clientX, clientY) {
+  const element = document.elementFromPoint(clientX, clientY)
+  return element?.closest?.('[data-care-column-status]')?.dataset.careColumnStatus || null
+}
+
+function scrollBoardAtEdge(clientX, clientY) {
+  const board = [...document.querySelectorAll('[data-care-board-scroll]')].find((element) => {
+    const bounds = element.getBoundingClientRect()
+    return clientY >= bounds.top && clientY <= bounds.bottom
+  })
+  if (!board) return
+
+  const bounds = board.getBoundingClientRect()
+  const edge = 52
+  if (clientX >= bounds.right - edge) board.scrollLeft += 22
+  if (clientX <= bounds.left + edge) board.scrollLeft -= 22
+}
+
+function startTouchMove(payload) {
+  touchDrag.value = { sessionId: payload.sessionId, from: payload.from }
+  touchDropStage.value = payload.from
+}
+
+function updateTouchMove({ clientX, clientY }) {
+  if (!touchDrag.value) return
+  scrollBoardAtEdge(clientX, clientY)
+  const stage = columnAtPoint(clientX, clientY)
+  if (activeStageNames.includes(stage)) touchDropStage.value = stage
+}
+
+function finishTouchMove({ clientX, clientY }) {
+  if (!touchDrag.value) return
+  const move = touchDrag.value
+  const stageAtRelease = columnAtPoint(clientX, clientY)
+  const to = activeStageNames.includes(stageAtRelease) ? stageAtRelease : touchDropStage.value
+  touchDrag.value = null
+  touchDropStage.value = null
+  if (to && to !== move.from) handleBoardMove({ ...move, to })
+}
+
+function cancelTouchMove() {
+  touchDrag.value = null
+  touchDropStage.value = null
 }
 
 function requestMove(session, to = actionNextStage[session.status], from = session.status) {
@@ -167,13 +208,13 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
       </div>
     </Transition>
 
-    <div v-if="!data" class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Loading dashboard">
-      <div v-for="index in 4" :key="index" class="skeleton h-32"></div>
+    <div v-if="!data" class="overview-metrics mt-8" aria-label="Loading dashboard">
+      <div v-for="index in 3" :key="index" class="skeleton h-32"></div>
     </div>
 
     <template v-else>
-      <section class="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="Key metrics">
-        <article class="metric-block xl:col-span-2">
+      <section class="overview-metrics mt-8" aria-label="Key metrics">
+        <article class="metric-block">
           <div class="metric-icon"><CurrencyCircleDollarIcon :size="25" /></div>
           <p>Revenue this month</p>
           <strong>{{ money(data.metrics.month_revenue) }}</strong>
@@ -193,82 +234,75 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
         </article>
       </section>
 
-      <template v-if="auth.isAdmin">
-        <section class="mt-10" aria-labelledby="pipeline-heading">
-          <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
-            <div>
-              <p class="eyebrow">Live workflow</p>
-              <h2 id="pipeline-heading" class="section-title mt-1">Care pipeline</h2>
-            </div>
-            <button v-if="selectedStage !== 'all'" type="button" class="text-link self-start sm:self-auto" @click="selectedStage = 'all'">Show all active <CloseIcon :size="15" /></button>
-          </div>
-
-          <div class="pipeline-scroll mt-5">
-            <div class="pipeline-track">
-              <template v-for="(stage, index) in stages" :key="stage.status">
-                <button
-                  type="button"
-                  class="pipeline-step"
-                  :class="[`pipeline-step-${stage.status}`, { 'pipeline-step-active': selectedStage === stage.status }]"
-                  :aria-pressed="selectedStage === stage.status"
-                  @click="selectedStage = stage.status"
-                >
-                  <span class="pipeline-icon"><component :is="stage.icon" :size="22" /></span>
-                  <span>
-                    <strong>{{ stage.label }}</strong>
-                    <small>{{ stageCount(stage.status) }} pair<span v-if="stageCount(stage.status) !== 1">s</span></small>
-                  </span>
-                  <b>{{ stageCount(stage.status) }}</b>
-                </button>
-                <span v-if="index < stages.length - 1" class="pipeline-connector" aria-hidden="true"><ArrowRightIcon :size="18" weight="bold" /></span>
-              </template>
-            </div>
-          </div>
-        </section>
-
-        <section class="mt-10" aria-labelledby="active-footwear-heading">
-          <div class="flex items-end justify-between gap-4">
-            <div>
-              <h2 id="active-footwear-heading" class="section-title">{{ selectedStage === 'all' ? 'Active footwear' : stages.find((stage) => stage.status === selectedStage)?.label }}</h2>
-              <p class="mt-1 text-sm text-muted">{{ filteredSessions.length }} pair<span v-if="filteredSessions.length !== 1">s</span></p>
-            </div>
-            <RouterLink to="/orders" class="text-link">All orders <ArrowRightIcon :size="16" /></RouterLink>
-          </div>
-
-          <div v-if="filteredSessions.length" class="data-panel mt-4 overflow-x-auto">
-            <table class="workflow-table">
-              <thead><tr><th>Footwear</th><th>Client</th><th>Received</th><th>Order</th><th>Stage</th></tr></thead>
-              <tbody>
-                <tr v-for="session in filteredSessions" :key="session.id">
-                  <td>
-                    <div class="flex min-w-56 items-center gap-3">
-                      <img v-if="session.shoe.reference_photo_url" :src="session.shoe.reference_photo_url" :alt="session.shoe.display_name" class="size-11 rounded-lg object-cover" />
-                      <span v-else class="grid size-11 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep"><ShoeIcon :size="22" /></span>
-                      <span><strong class="block text-navy">{{ session.shoe.display_name }}</strong><small class="font-bold text-sky-deep">{{ session.shoe.reference }}</small></span>
-                    </div>
-                  </td>
-                  <td><strong class="text-navy">{{ session.order.client.name }}</strong></td>
-                  <td class="text-muted">{{ dateTime(session.received_at) }}</td>
-                  <td><RouterLink :to="`/orders/${session.order.id}`" class="text-link">{{ session.order.reference }}</RouterLink></td>
-                  <td><StatusBadge :status="session.status" /></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <div v-else class="empty-state mt-4"><CheckCircleIcon :size="34" class="text-sky-deep" /><h3>No footwear here</h3><p>This stage is clear.</p></div>
-        </section>
-      </template>
-
-      <section v-else class="mt-10" aria-labelledby="care-board-heading">
-        <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-end">
+      <section v-if="auth.isAdmin" class="mt-10" aria-labelledby="shoe-progress-heading">
+        <div class="flex items-end justify-between gap-4">
           <div>
-            <p class="eyebrow">Drag between stages</p>
-            <h2 id="care-board-heading" class="section-title mt-1">Active footwear</h2>
+            <p class="eyebrow">Live workflow</p>
+            <h2 id="shoe-progress-heading" class="section-title mt-1">Shoe progress</h2>
           </div>
           <p class="flex items-center gap-2 text-sm font-semibold text-muted"><ClockIcon :size="17" /> {{ data.active_sessions.length }} in progress</p>
         </div>
 
-        <div class="board-scroll mt-5">
+        <div class="stage-tiles mt-5" role="tablist" aria-label="Footwear care stages">
+          <button
+            v-for="stage in stages"
+            :id="`stage-tab-${stage.status}`"
+            :key="stage.status"
+            type="button"
+            role="tab"
+            class="stage-tile"
+            :class="[`stage-tile-${stage.status}`, { 'stage-tile-active': selectedStage === stage.status }]"
+            :aria-selected="selectedStage === stage.status"
+            aria-controls="stage-footwear-panel"
+            @click="selectedStage = stage.status"
+          >
+            <span class="stage-tile-icon"><component :is="stage.icon" :size="21" /></span>
+            <span class="stage-tile-copy"><strong>{{ stage.label }}</strong><small>Footwear</small></span>
+            <b>{{ stageCount(stage.status) }}</b>
+          </button>
+        </div>
+
+        <section
+          id="stage-footwear-panel"
+          class="data-panel mt-4 overflow-x-auto"
+          role="tabpanel"
+          :aria-labelledby="`stage-tab-${selectedStage}`"
+        >
+          <div class="stage-table-heading">
+            <h3>{{ selectedStageLabel }}</h3>
+            <span>{{ selectedStageSessions.length }} pair<span v-if="selectedStageSessions.length !== 1">s</span></span>
+          </div>
+          <table v-if="selectedStageSessions.length" class="data-table min-w-[760px]">
+            <thead><tr><th>Footwear</th><th>Client</th><th>Order</th><th>Service</th><th>Received</th></tr></thead>
+            <tbody>
+              <tr v-for="session in selectedStageSessions" :key="session.id">
+                <td>
+                  <div class="flex min-w-52 items-center gap-3">
+                    <img v-if="session.shoe.reference_photo_url" :src="session.shoe.reference_photo_url" :alt="session.shoe.display_name" class="size-10 rounded-lg object-cover" />
+                    <span v-else class="grid size-10 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep"><ShoeIcon :size="20" /></span>
+                    <span><strong class="block text-navy">{{ session.shoe.display_name }}</strong><small class="font-bold text-sky-deep">{{ session.shoe.reference }}</small></span>
+                  </div>
+                </td>
+                <td><strong class="block text-navy">{{ session.order.client.name }}</strong><span class="text-xs text-muted">{{ session.order.client.phone }}</span></td>
+                <td><RouterLink :to="`/orders/${session.order.id}`" class="text-link">{{ session.order.reference }}</RouterLink></td>
+                <td class="font-semibold text-navy">{{ session.service }}</td>
+                <td class="whitespace-nowrap text-muted">{{ dateTime(session.received_at) }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-else class="stage-table-empty"><CheckCircleIcon :size="24" /><span>No footwear in this stage</span></div>
+        </section>
+      </section>
+
+      <section v-else class="mt-10" aria-labelledby="care-board-heading">
+        <div class="flex items-end justify-between gap-4">
+          <div>
+            <p class="eyebrow">Drag between stages</p>
+            <h2 id="care-board-heading" class="section-title mt-1">Roadmap</h2>
+          </div>
+        </div>
+
+        <div class="board-scroll mt-5" data-care-board-scroll>
           <div class="care-board">
             <CareBoardColumn
               v-for="column in boardColumns"
@@ -278,8 +312,13 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
               :icon="column.icon"
               :sessions="column.sessions.value"
               :busy-session="busySession"
+              :touch-drop-active="touchDropStage === column.status && touchDrag?.from !== column.status"
               @move="handleBoardMove"
               @action="requestMove"
+              @touch-drag-start="startTouchMove"
+              @touch-drag-move="updateTouchMove"
+              @touch-drop="finishTouchMove"
+              @touch-drag-cancel="cancelTouchMove"
             />
           </div>
         </div>
@@ -302,24 +341,27 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
 </template>
 
 <style scoped>
-.pipeline-scroll,
 .board-scroll { overflow-x: auto; padding-bottom: .35rem; }
-.pipeline-track { display: grid; grid-template-columns: minmax(12rem, 1fr) 3.25rem minmax(12rem, 1fr) 3.25rem minmax(12rem, 1fr); min-width: 48rem; align-items: center; }
-.pipeline-step { --stage-accent: #60778a; --stage-bg: #f4f7f9; --stage-icon: #e5ecf1; --stage-border: #d6e0e7; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: .85rem; min-height: 6.75rem; padding: 1.1rem; border: 1px solid var(--stage-border); border-radius: .8rem; background: var(--stage-bg); text-align: left; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
-.pipeline-step-received { --stage-accent: #5c7182; --stage-bg: #f3f6f8; --stage-icon: #e2e9ee; --stage-border: #d3dde4; }
-.pipeline-step-cleaning { --stage-accent: #147eae; --stage-bg: #eef8fc; --stage-icon: #d9f0fa; --stage-border: #c5e5f2; }
-.pipeline-step-ready_for_collection { --stage-accent: #32725c; --stage-bg: #eef8f3; --stage-icon: #dcefe6; --stage-border: #c9e4d8; }
-.pipeline-step:hover { border-color: var(--stage-accent); transform: translateY(-2px); }
-.pipeline-step:focus-visible { outline: 3px solid color-mix(in srgb, var(--stage-accent) 28%, transparent); outline-offset: 3px; }
-.pipeline-step-active { border-color: var(--stage-accent); box-shadow: 0 10px 24px color-mix(in srgb, var(--stage-accent) 14%, transparent), 0 0 0 1px var(--stage-accent); }
-.pipeline-icon { display: grid; width: 2.8rem; height: 2.8rem; place-items: center; border-radius: .7rem; background: var(--stage-icon); color: var(--stage-accent); }
-.pipeline-step strong { display: block; color: #123451; font-size: .95rem; }
-.pipeline-step small { display: block; margin-top: .25rem; color: #668096; font-weight: 600; }
-.pipeline-step b { color: var(--stage-accent); font-size: 1.8rem; line-height: 1; font-variant-numeric: tabular-nums; }
-.pipeline-connector { display: grid; place-items: center; color: #8ca0af; }
-.workflow-table { width: 100%; min-width: 58rem; border-collapse: collapse; font-size: .875rem; }
-.workflow-table th { padding: .85rem 1rem; background: #f4f9fc; color: #668096; font-size: .7rem; letter-spacing: .06em; text-align: left; text-transform: uppercase; }
-.workflow-table td { padding: 1rem; border-top: 1px solid var(--color-line); }
+.overview-metrics { display: grid; grid-template-columns: repeat(3, minmax(13rem, 1fr)); gap: .75rem; overflow-x: auto; padding-bottom: .35rem; scrollbar-width: none; scroll-snap-type: x proximity; }
+.overview-metrics::-webkit-scrollbar { display: none; }
+.overview-metrics > * { scroll-snap-align: start; }
+.stage-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .65rem; }
+.stage-tile { --stage-accent: #60778a; --stage-bg: #f3f6f8; --stage-border: #d3dde4; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; min-height: 6rem; align-items: center; gap: .75rem; padding: .9rem 1rem; border: 1px solid var(--stage-border); border-radius: .8rem; background: var(--stage-bg); text-align: left; transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease; }
+.stage-tile-received { --stage-accent: #5c7182; --stage-bg: #f3f6f8; --stage-border: #d3dde4; }
+.stage-tile-cleaning { --stage-accent: #147eae; --stage-bg: #eef8fc; --stage-border: #c5e5f2; }
+.stage-tile-ready_for_collection { --stage-accent: #32725c; --stage-bg: #eef8f3; --stage-border: #c9e4d8; }
+.stage-tile:hover { border-color: var(--stage-accent); transform: translateY(-1px); }
+.stage-tile:focus-visible { outline: 3px solid color-mix(in srgb, var(--stage-accent) 26%, transparent); outline-offset: 2px; }
+.stage-tile-active { border-color: var(--stage-accent); box-shadow: 0 9px 22px color-mix(in srgb, var(--stage-accent) 13%, transparent); }
+.stage-tile-icon { display: grid; width: 2.5rem; height: 2.5rem; place-items: center; border-radius: .65rem; background: color-mix(in srgb, var(--stage-accent) 12%, white); color: var(--stage-accent); }
+.stage-tile-copy { min-width: 0; }
+.stage-tile-copy strong { display: block; color: #123451; font-size: .88rem; line-height: 1.1; }
+.stage-tile-copy small { display: block; margin-top: .25rem; color: #6c8292; font-size: .68rem; font-weight: 650; }
+.stage-tile b { color: var(--stage-accent); font-size: 1.65rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.stage-table-heading { display: flex; align-items: center; justify-content: space-between; padding: .85rem 1rem; border-bottom: 1px solid var(--color-line); }
+.stage-table-heading h3 { color: #123451; font-size: .95rem; font-weight: 750; }
+.stage-table-heading span { color: #64788a; font-size: .75rem; font-weight: 700; }
+.stage-table-empty { display: flex; min-height: 8rem; align-items: center; justify-content: center; gap: .6rem; color: #6c8292; font-size: .82rem; font-weight: 700; }
 .care-board { display: grid; grid-template-columns: repeat(3, minmax(18rem, 1fr)); gap: 1rem; min-width: 58rem; }
 .board-toast { position: fixed; right: 1rem; bottom: 1rem; z-index: 70; display: inline-flex; max-width: calc(100vw - 2rem); align-items: center; gap: .4rem; padding: .5rem .65rem; border: 1px solid #b8dfcf; border-radius: .55rem; background: #edf8f3; color: #245f4c; box-shadow: 0 10px 28px rgba(9, 29, 45, .14); font-size: .75rem; font-weight: 700; line-height: 1; pointer-events: none; }
 .toast-enter-active, .toast-leave-active { transition: opacity .16s ease, transform .16s ease; }
@@ -327,10 +369,17 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
 .dialog-backdrop { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 1rem; background: rgba(9, 29, 45, .5); backdrop-filter: blur(3px); }
 .confirm-dialog { width: min(100%, 25rem); padding: 1.5rem; border: 1px solid #d4e4ed; border-radius: 1rem; background: white; box-shadow: 0 24px 70px rgba(9, 29, 45, .22); }
 @media (max-width: 640px) {
-  .pipeline-track { min-width: 40rem; grid-template-columns: minmax(10rem, 1fr) 2rem minmax(10rem, 1fr) 2rem minmax(10rem, 1fr); }
-  .pipeline-step { min-height: 5.75rem; padding: .85rem; }
-  .pipeline-step b { font-size: 1.4rem; }
+  .stage-tiles { gap: .4rem; }
+  .stage-tile { min-height: 5.5rem; grid-template-columns: 1fr auto; gap: .35rem; padding: .65rem; }
+  .stage-tile-icon { width: 2rem; height: 2rem; }
+  .stage-tile-copy { grid-column: 1 / -1; grid-row: 2; }
+  .stage-tile-copy strong { min-height: 1.55rem; font-size: .72rem; }
+  .stage-tile-copy small { display: none; }
+  .stage-tile b { grid-column: 2; grid-row: 1; font-size: 1.25rem; }
   .board-toast { right: auto; left: 50%; transform: translateX(-50%); }
   .toast-enter-from, .toast-leave-to { opacity: 0; transform: translate(-50%, .4rem); }
+}
+@media (min-width: 768px) {
+  .overview-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; overflow: visible; padding-bottom: 0; }
 }
 </style>

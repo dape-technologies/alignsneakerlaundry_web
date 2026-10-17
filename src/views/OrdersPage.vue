@@ -49,22 +49,22 @@ onMounted(loadOrders)
 
 <template>
   <AppShell>
-    <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <header class="flex items-start justify-between gap-3 sm:items-end">
       <div>
         <p class="eyebrow">Three-stage care workflow</p>
         <h1 class="page-title">Service orders</h1>
-        <p class="mt-3 max-w-2xl text-muted">Track every active order from intake through cleaning to collection readiness.</p>
       </div>
-      <RouterLink to="/orders/new" class="button-primary"><PlusIcon :size="18" weight="bold" /> New intake</RouterLink>
+      <RouterLink to="/orders/new" class="button-primary compact-intake-button" aria-label="New intake"><PlusIcon :size="17" weight="bold" /><span class="sm:hidden">Intake</span><span class="hidden sm:inline">New intake</span></RouterLink>
     </header>
 
-    <section class="mt-8 grid gap-3 lg:grid-cols-[minmax(18rem,1fr)_auto] lg:items-center" aria-label="Order filters">
+    <section class="mt-6 grid grid-cols-[minmax(0,1fr)_8.5rem] gap-2 sm:mt-8 lg:grid-cols-[minmax(18rem,1fr)_auto] lg:items-center" aria-label="Order filters">
       <label class="search-box">
         <MagnifyingGlassIcon :size="19" />
         <span class="sr-only">Search orders</span>
         <input v-model="search" type="search" placeholder="Search order, client, phone, or shoe" />
       </label>
-      <div class="stage-filter" role="group" aria-label="Filter by care stage">
+      <label class="mobile-filter lg:hidden"><span class="sr-only">Care stage</span><select v-model="status"><option v-for="stage in stages" :key="stage.label" :value="stage.value">{{ stage.label }}</option></select></label>
+      <div class="stage-filter hidden lg:flex" role="group" aria-label="Filter by care stage">
         <button v-for="stage in stages" :key="stage.label" type="button" :class="{ active: status === stage.value }" :aria-pressed="status === stage.value" @click="status = stage.value">
           <component :is="stage.icon" :size="17" /> {{ stage.label }}
         </button>
@@ -73,7 +73,15 @@ onMounted(loadOrders)
 
     <div v-if="error" class="alert-error mt-6">{{ error }}</div>
     <div v-else-if="loading" class="mt-6 space-y-3"><div v-for="index in 5" :key="index" class="skeleton h-18"></div></div>
-    <section v-else-if="orders.length" class="data-panel mt-6 overflow-x-auto">
+    <template v-else-if="orders.length">
+    <section class="mt-5 grid gap-2 md:hidden" aria-label="Service orders">
+      <RouterLink v-for="order in orders" :key="order.id" :to="`/orders/${order.id}`" class="rounded-xl border border-line bg-white p-4 shadow-[0_8px_24px_rgba(29,79,111,0.04)] active:bg-sky-soft">
+        <div class="flex items-center justify-between gap-3"><strong class="text-sm text-sky-deep">{{ order.reference }}</strong><StatusBadge :status="order.status" /></div>
+        <div class="mt-3 flex items-center gap-2.5"><span class="grid size-9 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep"><ShoeIcon :size="18" /></span><span class="min-w-0"><strong class="block truncate text-navy">{{ order.cleaning_sessions[0]?.shoe?.display_name }}</strong><small class="text-muted">{{ order.client_name }}</small></span></div>
+        <div class="mt-3 flex items-end justify-between gap-3 border-t border-line pt-3"><span class="text-xs text-muted">{{ dateTime(order.received_at) }}</span><span class="text-right"><strong class="block text-sm text-navy">{{ money(order.total) }}</strong><small class="text-muted">{{ money(order.balance) }} due</small></span></div>
+      </RouterLink>
+    </section>
+    <section class="data-panel mt-6 hidden overflow-x-auto md:block">
       <table class="data-table min-w-[900px]">
         <thead><tr><th>Order</th><th>Client</th><th>Footwear</th><th>Received</th><th>Stage</th><th class="text-right">Value</th></tr></thead>
         <tbody>
@@ -93,6 +101,7 @@ onMounted(loadOrders)
         </tbody>
       </table>
     </section>
-    <section v-else class="empty-state mt-6"><PackageIcon :size="34" class="text-sky-deep" /><h2>No active service orders found</h2><p>Adjust the filters or start a new footwear intake.</p><RouterLink to="/orders/new" class="button-primary mt-5">New intake</RouterLink></section>
+    </template>
+    <section v-else class="empty-state mt-6"><PackageIcon :size="34" class="text-sky-deep" /><h2>No active service orders found</h2><RouterLink to="/orders/new" class="button-primary mt-5">New intake</RouterLink></section>
   </AppShell>
 </template>

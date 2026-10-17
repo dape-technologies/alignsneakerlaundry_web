@@ -1,12 +1,14 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue'
-import { PhArrowRight as ArrowIcon, PhCalendarBlank as CalendarIcon, PhMagnifyingGlass as SearchIcon, PhSneaker as ShoeIcon, PhUsers as UsersIcon, PhX as ClearIcon } from '@phosphor-icons/vue'
+import { PhArrowRight as ArrowIcon, PhCalendarBlank as CalendarIcon, PhMagnifyingGlass as SearchIcon, PhPlus as PlusIcon, PhSneaker as ShoeIcon, PhUsers as UsersIcon, PhX as ClearIcon } from '@phosphor-icons/vue'
 import AppShell from '../components/AppShell.vue'
 import { api } from '../services/api'
 import { dateOnly } from '../lib/format'
 
 const clients = ref([])
 const filters = reactive({ client_name: '', shoe_name: '', date: '' })
+const mobileFilter = ref('client_name')
+const mobileValue = ref('')
 const loading = ref(true)
 const error = ref('')
 let timer
@@ -26,7 +28,14 @@ function clearFilters() {
   filters.client_name = ''
   filters.shoe_name = ''
   filters.date = ''
+  mobileValue.value = ''
 }
+watch([mobileFilter, mobileValue], ([field, value]) => {
+  filters.client_name = ''
+  filters.shoe_name = ''
+  filters.date = ''
+  filters[field] = value
+})
 watch(filters, () => {
   clearTimeout(timer)
   timer = setTimeout(loadClients, 250)
@@ -36,12 +45,17 @@ onMounted(loadClients)
 
 <template>
   <AppShell>
-    <header class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-      <div><p class="eyebrow">Client registry</p><h1 class="page-title">Clients & footwear</h1><p class="mt-3 max-w-2xl text-muted">Searchable client profiles, registered pairs, and service activity in one table.</p></div>
-      <RouterLink to="/orders/new" class="button-primary">Start new intake</RouterLink>
+    <header class="flex items-start justify-between gap-3 sm:items-end">
+      <div class="min-w-0"><p class="eyebrow">Client registry</p><h1 class="page-title client-page-title">Clients & footwear</h1></div>
+      <RouterLink to="/orders/new" class="button-primary compact-intake-button" aria-label="Start new intake"><PlusIcon :size="17" weight="bold" /><span class="sm:hidden">Intake</span><span class="hidden sm:inline">Start new intake</span></RouterLink>
     </header>
 
-    <section class="filter-panel mt-8" aria-label="Client and footwear filters">
+    <section class="mt-6 grid grid-cols-[minmax(0,1fr)_7.75rem] gap-2 md:hidden" aria-label="Client and footwear filters">
+      <label class="filter-input"><SearchIcon v-if="mobileFilter !== 'date'" :size="18" /><CalendarIcon v-else :size="18" /><span class="sr-only">Filter value</span><input v-model="mobileValue" :type="mobileFilter === 'date' ? 'date' : 'search'" :placeholder="mobileFilter === 'client_name' ? 'Client name' : 'Shoe name'" /></label>
+      <label class="mobile-filter"><span class="sr-only">Filter by</span><select v-model="mobileFilter"><option value="client_name">Client</option><option value="shoe_name">Shoe</option><option value="date">Date</option></select></label>
+    </section>
+
+    <section class="filter-panel desktop-filter-panel mt-8" aria-label="Client and footwear filters">
       <label class="field"><span>Client name</span><span class="filter-input"><SearchIcon :size="18" /><input v-model="filters.client_name" type="search" placeholder="e.g. Amina" /></span></label>
       <label class="field"><span>Shoe name</span><span class="filter-input"><ShoeIcon :size="18" /><input v-model="filters.shoe_name" type="search" placeholder="Brand, model, or type" /></span></label>
       <label class="field"><span>Service date</span><span class="filter-input"><CalendarIcon :size="18" /><input v-model="filters.date" type="date" /></span></label>
@@ -70,6 +84,6 @@ onMounted(loadClients)
         </tbody>
       </table>
     </section>
-    <section v-else class="empty-state mt-6"><UsersIcon :size="34" class="text-sky-deep" /><h2>No matching records</h2><p>Clear a filter or register a client during a new intake.</p><button class="button-secondary mt-5" type="button" @click="clearFilters">Clear filters</button></section>
+    <section v-else class="empty-state mt-6"><UsersIcon :size="34" class="text-sky-deep" /><h2>No matching records</h2><button class="button-secondary mt-5" type="button" @click="clearFilters">Clear filters</button></section>
   </AppShell>
 </template>

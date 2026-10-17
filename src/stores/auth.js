@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { api, initializeCsrf } from '../services/api'
+import { api, clearSessionState, initializeCsrf, keepSessionAlive, resetAuthFailure } from '../services/api'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({ user: null, initialized: false }),
@@ -24,6 +24,7 @@ export const useAuthStore = defineStore('auth', {
       const { data } = await api.post('/login', credentials)
       this.user = data.user
       this.initialized = true
+      resetAuthFailure()
     },
     async logout() {
       try {
@@ -32,7 +33,21 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.user = null
         this.initialized = true
+        clearSessionState()
       }
+    },
+    async refreshSession() {
+      if (!this.user) return
+      try {
+        this.user = await keepSessionAlive(true)
+      } catch {
+        // The shared API handler moves an expired session to login once.
+      }
+    },
+    expireSession() {
+      this.user = null
+      this.initialized = true
+      clearSessionState()
     },
   },
 })
