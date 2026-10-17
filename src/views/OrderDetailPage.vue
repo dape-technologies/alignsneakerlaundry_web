@@ -17,8 +17,8 @@ const formErrors = ref({})
 const sessionForms = reactive({})
 const paymentForm = reactive({ amount: '', method: 'cash', reference: '' })
 const transitions = {
-  received: ['cleaning', 'cancelled'], cleaning: ['ready_for_collection', 'cancelled'],
-  ready_for_collection: ['collected', 'cleaning'], collected: [], cancelled: [],
+  received: ['cleaning'], cleaning: ['received', 'ready_for_collection'],
+  ready_for_collection: ['cleaning'], collected: [], cancelled: [],
 }
 
 function initialiseForms() { for (const session of order.value.cleaning_sessions) sessionForms[session.id] = { status: transitions[session.status]?.[0] || '', notes: '' } }

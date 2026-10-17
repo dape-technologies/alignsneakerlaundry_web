@@ -7,8 +7,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   test: { environment: 'jsdom' },
   plugins: [vue(), tailwindcss(), VitePWA({
-    registerType: 'prompt',
-    includeAssets: ['favicon.svg', 'pwa-icon.svg'],
+    registerType: 'autoUpdate',
+    includeAssets: ['favicon.png', 'align-logo.png', 'pwa-192.png', 'pwa-512.png'],
     manifest: {
       name: 'Align Sneaker Laundry Operations',
       short_name: 'Align Laundry',
@@ -16,13 +16,22 @@ export default defineConfig({
       theme_color: '#ffffff',
       background_color: '#f6fafd',
       display: 'standalone',
-      start_url: '/login',
+      id: '/',
+      scope: '/',
+      start_url: '/',
       icons: [
-        { src: '/pwa-icon.svg', sizes: '192x192', type: 'image/svg+xml' },
-        { src: '/pwa-icon.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+        { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
-    workbox: { navigateFallback: '/index.html', runtimeCaching: [] },
+    workbox: {
+      navigateFallback: '/index.html',
+      cleanupOutdatedCaches: true,
+      clientsClaim: true,
+      skipWaiting: true,
+      runtimeCaching: [],
+    },
   })],
   server: {
     proxy: {

@@ -71,7 +71,7 @@ describe('CareBoardCard drag surface', () => {
     const options = dragMocks.draggable.mock.calls[0][0]
     const cardText = wrapper.get('strong').element
     const orderLink = wrapper.get('a').element
-    const action = wrapper.get('button').element
+    const action = wrapper.get('.card-action').element
     const elementFromPoint = vi.fn()
     Object.defineProperty(document, 'elementFromPoint', {
       configurable: true,
@@ -86,5 +86,39 @@ describe('CareBoardCard drag surface', () => {
 
     elementFromPoint.mockReturnValue(action)
     expect(options.canDrag({ input: { clientX: 10, clientY: 20 } })).toBe(false)
+  })
+
+  it('emits a complete touch drag gesture from the mobile handle', async () => {
+    const wrapper = mountCard()
+    const handle = wrapper.get('.care-card-handle')
+
+    await handle.trigger('pointerdown', {
+      pointerType: 'touch',
+      pointerId: 4,
+      clientX: 20,
+      clientY: 30,
+    })
+    await handle.trigger('pointermove', {
+      pointerType: 'touch',
+      pointerId: 4,
+      clientX: 80,
+      clientY: 60,
+    })
+    await handle.trigger('pointerup', {
+      pointerType: 'touch',
+      pointerId: 4,
+      clientX: 80,
+      clientY: 60,
+    })
+
+    expect(wrapper.emitted('touch-drag-start')?.[0]?.[0]).toMatchObject({
+      sessionId: 18,
+      from: 'received',
+    })
+    expect(wrapper.emitted('touch-drag-move')?.[0]?.[0]).toEqual({ clientX: 80, clientY: 60 })
+    expect(wrapper.emitted('touch-drop')?.[0]?.[0]).toEqual({ clientX: 80, clientY: 60 })
+    expect(document.querySelector('.care-card-touch-preview')).toBeNull()
+
+    wrapper.unmount()
   })
 })

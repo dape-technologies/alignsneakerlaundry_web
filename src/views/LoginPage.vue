@@ -1,9 +1,8 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   PhArrowRight as ArrowRightIcon,
-  PhCheck as CheckIcon,
   PhDrop as DropIcon,
   PhEnvelopeSimple as EmailIcon,
   PhEye as EyeIcon,
@@ -12,20 +11,18 @@ import {
   PhSparkle as SparkleIcon,
 } from '@phosphor-icons/vue'
 import { useAuthStore } from '../stores/auth'
+import BrandLogo from '../components/BrandLogo.vue'
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-const showDemoAccounts = import.meta.env.DEV
 const showPassword = ref(false)
 const form = reactive({
-  email: import.meta.env.DEV ? 'admin@alignlaundry.test' : '',
-  password: import.meta.env.DEV ? 'password' : '',
-  remember: true,
+  email: '',
+  password: '',
 })
 const loading = ref(false)
-const error = ref('')
-const activeDemoRole = computed(() => form.email.startsWith('admin@') ? 'administrator' : form.email.startsWith('worker@') ? 'worker' : '')
+const error = ref(route.query.reason === 'session-expired' ? 'Your session expired. Sign in again to continue.' : '')
 
 async function submit() {
   if (!navigator.onLine) {
@@ -46,10 +43,6 @@ async function submit() {
   }
 }
 
-function useDemoAccount(email) {
-  form.email = email
-  form.password = 'password'
-}
 </script>
 
 <template>
@@ -65,10 +58,7 @@ function useDemoAccount(email) {
 
       <div class="relative flex h-full min-h-[calc(100dvh-3rem)] flex-col justify-between xl:min-h-[calc(100dvh-4rem)]">
         <div class="flex items-center gap-3">
-          <span class="relative grid size-12 place-items-center rounded-xl bg-navy text-xl font-extrabold text-white shadow-[0_10px_28px_rgba(16,47,76,0.2)]">
-            A
-            <span class="absolute right-1.5 top-1.5 size-2 rounded-full bg-sky"></span>
-          </span>
+          <BrandLogo size="lg" />
           <span class="text-xs font-bold uppercase tracking-[0.18em] text-navy">Professional footwear care</span>
         </div>
 
@@ -113,7 +103,6 @@ function useDemoAccount(email) {
           <div class="login-intro">
             <span class="login-mark" aria-hidden="true"><LockIcon :size="21" weight="duotone" /></span>
             <h2>Welcome back</h2>
-            <p>Sign in to continue.</p>
           </div>
 
           <div v-if="error" class="alert-error mt-6" role="alert" aria-live="polite">{{ error }}</div>
@@ -160,36 +149,6 @@ function useDemoAccount(email) {
               </div>
             </div>
 
-            <div v-if="showDemoAccounts" class="demo-login">
-              <p>Demo account</p>
-              <div class="demo-options">
-                <button
-                  type="button"
-                  class="demo-option"
-                  :class="{ selected: activeDemoRole === 'administrator' }"
-                  :aria-pressed="activeDemoRole === 'administrator'"
-                  @click="useDemoAccount('admin@alignlaundry.test')"
-                >
-                  <span>Administrator</span>
-                  <CheckIcon v-if="activeDemoRole === 'administrator'" :size="14" weight="bold" />
-                </button>
-                <button
-                  type="button"
-                  class="demo-option"
-                  :class="{ selected: activeDemoRole === 'worker' }"
-                  :aria-pressed="activeDemoRole === 'worker'"
-                  @click="useDemoAccount('worker@alignlaundry.test')"
-                >
-                  <span>Care worker</span>
-                  <CheckIcon v-if="activeDemoRole === 'worker'" :size="14" weight="bold" />
-                </button>
-              </div>
-            </div>
-
-            <label class="remember-option">
-              <input v-model="form.remember" type="checkbox" />
-              Keep me signed in
-            </label>
           </div>
 
           <button class="login-submit button-primary" type="submit" :disabled="loading">
@@ -365,23 +324,6 @@ function useDemoAccount(email) {
 .demo-option svg {
   flex: 0 0 auto;
   color: #1886bd;
-}
-
-.remember-option {
-  display: flex;
-  width: fit-content;
-  cursor: pointer;
-  align-items: center;
-  gap: 0.7rem;
-  color: #64788a;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.remember-option input {
-  width: 1rem;
-  height: 1rem;
-  accent-color: #1886bd;
 }
 
 .login-submit {

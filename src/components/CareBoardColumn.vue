@@ -9,8 +9,9 @@ const props = defineProps({
   icon: { type: [Object, Function], required: true },
   sessions: { type: Array, required: true },
   busySession: { type: [Number, String], default: null },
+  touchDropActive: { type: Boolean, default: false },
 })
-const emit = defineEmits(['move', 'action'])
+const emit = defineEmits(['move', 'action', 'touch-drag-start', 'touch-drag-move', 'touch-drop', 'touch-drag-cancel'])
 
 const column = ref(null)
 const draggedOver = ref(false)
@@ -38,7 +39,12 @@ onBeforeUnmount(() => cleanup?.())
 </script>
 
 <template>
-  <section ref="column" class="care-column" :class="[`care-column-${status}`, { 'care-column-drop': draggedOver }]">
+  <section
+    ref="column"
+    class="care-column"
+    :class="[`care-column-${status}`, { 'care-column-drop': draggedOver || touchDropActive }]"
+    :data-care-column-status="status"
+  >
     <header class="care-column-header">
       <span class="flex items-center gap-2"><component :is="icon" :size="19" /><strong>{{ label }}</strong></span>
       <b>{{ sessions.length }}</b>
@@ -50,6 +56,10 @@ onBeforeUnmount(() => cleanup?.())
         :session="session"
         :busy="Boolean(busySession)"
         @action="emit('action', $event)"
+        @touch-drag-start="emit('touch-drag-start', $event)"
+        @touch-drag-move="emit('touch-drag-move', $event)"
+        @touch-drop="emit('touch-drop', $event)"
+        @touch-drag-cancel="emit('touch-drag-cancel')"
       />
     </div>
     <p v-if="!sessions.length" class="care-column-empty">Drop footwear here</p>

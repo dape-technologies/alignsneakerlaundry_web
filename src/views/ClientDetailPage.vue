@@ -1,8 +1,9 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { PhArrowLeft as ArrowIcon, PhClockCounterClockwise as HistoryIcon, PhSneaker as ShoeIcon } from '@phosphor-icons/vue'
+import { PhArrowLeft as ArrowIcon, PhClockCounterClockwise as HistoryIcon, PhPencilSimple as EditIcon, PhPlus as PlusIcon, PhSneaker as ShoeIcon, PhX as CloseIcon } from '@phosphor-icons/vue'
 import AppShell from '../components/AppShell.vue'
+import FormField from '../components/FormField.vue'
 import MediaUploader from '../components/MediaUploader.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import { api } from '../services/api'
@@ -57,11 +58,22 @@ async function saveShoe() {
     <div v-if="error" class="alert-error mt-6">{{ error }}</div>
     <div v-else-if="!client" class="mt-6 space-y-4"><div class="skeleton h-40"></div><div class="skeleton h-80"></div></div>
     <template v-else>
-      <header class="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div><p class="eyebrow">Client profile</p><h1 class="page-title">{{ client.name }}</h1><div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted"><a :href="`tel:${client.phone}`" class="font-semibold text-sky-deep">{{ client.phone }}</a><a :href="`mailto:${client.email}`">{{ client.email }}</a><span>{{ client.active_sessions.length }} active care session<span v-if="client.active_sessions.length !== 1">s</span></span></div></div>
-        <div class="flex flex-wrap gap-2"><button class="button-secondary" type="button" @click="editing = !editing">{{ editing ? 'Cancel editing' : 'Edit client' }}</button><RouterLink :to="{ path: '/orders/new', query: { client: client.id } }" class="button-primary">Start return intake</RouterLink></div>
+      <header class="client-profile-header mt-6">
+        <p class="eyebrow">Client profile</p>
+        <div class="mt-1 grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
+          <h1 class="page-title client-profile-title mt-0 min-w-0 break-words">{{ client.name }}</h1>
+          <div class="client-header-actions">
+            <button class="button-secondary client-header-button" type="button" @click="editing = !editing"><CloseIcon v-if="editing" :size="16" /><EditIcon v-else :size="16" /><span>{{ editing ? 'Cancel' : 'Edit' }}</span></button>
+            <RouterLink :to="{ path: '/orders/new', query: { client: client.id } }" class="button-primary client-header-button"><PlusIcon :size="16" /><span class="sm:hidden">Intake</span><span class="hidden sm:inline">Return intake</span></RouterLink>
+          </div>
+        </div>
+        <div class="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted"><a :href="`tel:${client.phone}`" class="font-semibold text-sky-deep">{{ client.phone }}</a><a :href="`mailto:${client.email}`">{{ client.email }}</a><span>{{ client.active_sessions.length }} active care session<span v-if="client.active_sessions.length !== 1">s</span></span></div>
       </header>
-      <form v-if="editing" class="form-section mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" @submit.prevent="saveClient"><label class="field"><span>Full name</span><input v-model="form.name" required /></label><label class="field"><span>Phone</span><input v-model="form.phone" type="tel" required /></label><label class="field"><span>Email</span><input v-model="form.email" type="email" required /></label><label class="field"><span>Client notes</span><input v-model="form.notes" /></label><p v-if="formError" class="text-sm font-semibold text-rose-700 sm:col-span-2 lg:col-span-3">{{ formError }}</p><button class="button-primary justify-center lg:justify-self-end" :disabled="saving">{{ saving ? 'Saving…' : 'Save client' }}</button></form>
+      <form v-if="editing" class="form-section mt-6" @submit.prevent="saveClient">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"><FormField v-model="form.name" label="Full name" required /><FormField v-model="form.phone" label="Phone" type="tel" required /><FormField v-model="form.email" label="Email" type="email" required /><FormField v-model="form.notes" label="Client notes" /></div>
+        <p v-if="formError" class="mt-4 text-sm font-semibold text-rose-700">{{ formError }}</p>
+        <div class="mt-5 flex justify-end border-t border-line pt-4"><button class="button-primary min-w-32 justify-center" :disabled="saving">{{ saving ? 'Saving…' : 'Save changes' }}</button></div>
+      </form>
       <section class="mt-8 grid gap-8 xl:grid-cols-[1fr_0.9fr]">
         <div>
           <div class="flex items-center gap-3"><span class="metric-icon"><ShoeIcon :size="23" /></span><div><h2 class="section-title">Registered footwear</h2><p class="text-sm text-muted">{{ client.shoes.length }} permanent pair records</p></div></div>

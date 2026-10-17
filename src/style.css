@@ -1,6 +1,4 @@
 @import "@fontsource-variable/outfit";
-@import "@uppy/vue/css/style.css";
-@import "@uppy/vue/css/image-editor.css";
 @import "tailwindcss";
 
 @theme {
@@ -25,25 +23,33 @@
   body { @apply m-0 min-w-80 bg-canvas text-ink antialiased; }
   button, a, input, select, textarea { @apply outline-none; }
   button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { @apply ring-2 ring-sky ring-offset-2 ring-offset-white; }
-  button:active, a:active { transform: translateY(1px); }
-  button, a { @apply transition duration-200; }
+  button, a { transition: color 220ms ease, background-color 220ms ease, border-color 220ms ease, box-shadow 220ms ease, opacity 220ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
+  button:not(:disabled):active, a:active { transform: translateY(1px) scale(0.985); transition-duration: 90ms; }
   strong, .font-mono { font-variant-numeric: tabular-nums; }
 }
 
 @layer components {
-  .button-primary { @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-navy px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(16,47,76,0.12)] hover:bg-navy-hover disabled:cursor-not-allowed disabled:opacity-55; }
-  .button-secondary { @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-bold text-ink hover:border-sky hover:bg-sky-soft disabled:cursor-not-allowed disabled:opacity-55; }
+  .button-primary { @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg bg-navy px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_20px_rgba(16,47,76,0.12)] hover:-translate-y-0.5 hover:bg-navy-hover hover:shadow-[0_12px_26px_rgba(16,47,76,0.18)] disabled:cursor-not-allowed disabled:opacity-55; }
+  .button-secondary { @apply inline-flex min-h-11 items-center gap-2 whitespace-nowrap rounded-lg border border-line bg-white px-4 py-2.5 text-sm font-bold text-ink hover:-translate-y-0.5 hover:border-sky hover:bg-sky-soft hover:shadow-[0_8px_20px_rgba(29,79,111,0.08)] disabled:cursor-not-allowed disabled:opacity-55; }
   .button-tertiary { @apply inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-bold text-sky-deep hover:bg-sky-soft; }
   .icon-button { @apply grid size-10 place-items-center rounded-lg text-muted hover:bg-sky-soft hover:text-navy; }
   .nav-link { @apply relative flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold text-muted hover:bg-sky-soft hover:text-navy; }
   .nav-link.router-link-active { @apply bg-sky-soft text-navy; }
   .nav-link.router-link-active::before { content: ""; @apply absolute inset-y-2 left-0 w-0.5 rounded-full bg-sky; }
   .field { @apply grid gap-2 text-sm font-semibold text-ink; }
-  .field input, .field select, .field textarea, .input { @apply min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-base font-medium text-ink placeholder:text-muted hover:border-[#bdd4e1] focus:border-sky; }
+  .field input, .field select, .field textarea, .input { @apply min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-base font-medium text-ink placeholder:text-muted; transition: border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
+  .field input:hover, .field select:hover, .field textarea:hover, .input:hover { @apply border-[#b7d2e1]; }
+  .field input:focus, .field select:focus, .field textarea:focus, .input:focus { @apply border-sky bg-white shadow-[0_0_0_4px_rgba(56,169,224,0.13)]; transform: translateY(-1px); }
   .field textarea { @apply resize-y; }
   .field small { @apply font-semibold text-rose-700; }
   .field-dark { @apply text-white; }
   .field-dark input, .field-dark select, .field-dark textarea { @apply border-[#31536d] bg-[#0b2941] text-white placeholder:text-[#9ab6c8] focus:border-sky; }
+  .field-dark input:focus, .field-dark select:focus, .field-dark textarea:focus { @apply bg-[#0b2941] shadow-[0_0_0_4px_rgba(56,169,224,0.18)]; }
+  .app-field-control { @apply relative flex items-center rounded-lg; }
+  .app-field-control > input, .app-field-control > select, .app-field-control > textarea { @apply flex-1; }
+  .app-field-control > svg:first-child { @apply pointer-events-none absolute left-3 z-10 text-muted; }
+  .app-field-control > svg:first-child + input { @apply pl-10; }
+  .app-field-invalid input, .app-field-invalid select, .app-field-invalid textarea { @apply border-rose-400; }
   .form-section { @apply rounded-xl border border-line bg-white p-5 shadow-[0_10px_32px_rgba(29,79,111,0.045)] sm:p-6; }
   .section-title { @apply text-xl font-bold tracking-[-0.025em] text-navy; }
   .eyebrow { @apply text-sm font-bold text-sky-deep; }
@@ -63,16 +69,72 @@
   .empty-state p { @apply mt-2 max-w-sm text-sm; }
   .skeleton { @apply animate-pulse rounded-xl bg-[#e5eff5]; }
   .data-panel { @apply overflow-hidden rounded-xl border border-line bg-white shadow-[0_10px_32px_rgba(29,79,111,0.035)]; }
-  .media-uploader { @apply overflow-hidden rounded-xl border border-line bg-white; }
-  .media-uploader .uppy-Dashboard-inner { @apply border-0 bg-white; }
-  .media-uploader .uppy-Dashboard-AddFiles { @apply border-0 bg-sky-soft/40; }
-  .media-uploader .uppy-Dashboard-AddFiles-title { @apply text-base font-semibold text-navy; }
-  .media-uploader .uppy-Dashboard-browse { @apply font-bold text-sky-deep; }
-  .media-uploader .uppy-Dashboard-note { @apply text-muted; }
-  .media-uploader .uppy-Dashboard-Item-name { @apply font-semibold text-ink; }
-  .media-uploader .uppy-DashboardContent-bar { @apply border-line bg-white; }
+  .data-table { @apply w-full border-collapse text-sm; }
+  .data-table th { @apply bg-[#f2f7fa] px-4 py-3 text-left text-[0.68rem] font-bold uppercase tracking-[0.075em] text-muted; }
+  .data-table td { @apply border-t border-line px-4 py-3.5 align-middle; }
+  .data-table tbody tr { @apply transition-colors hover:bg-sky-soft/45; }
+  .stage-filter { @apply flex min-h-11 gap-1 overflow-x-auto rounded-lg border border-line bg-white p-1; }
+  .stage-filter button { @apply inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-bold text-muted hover:-translate-y-px hover:bg-sky-soft hover:text-navy; }
+  .stage-filter button.active { @apply bg-navy text-white shadow-[0_4px_12px_rgba(16,47,76,0.14)]; }
+  .mobile-filter { @apply relative min-w-0; }
+  .mobile-filter select { @apply min-h-11 w-full appearance-none truncate rounded-lg border border-line bg-white px-3 pr-8 text-sm font-bold text-navy focus:border-sky; }
+  .mobile-filter::after { content: ""; @apply pointer-events-none absolute right-3 top-1/2 size-2 -translate-y-2/3 rotate-45 border-b-2 border-r-2 border-muted; }
+  .filter-panel { @apply grid gap-3 rounded-xl border border-line bg-white p-4 shadow-[0_10px_32px_rgba(29,79,111,0.035)] md:grid-cols-2 xl:grid-cols-[1fr_1fr_15rem_auto]; }
+  .filter-input { @apply flex min-h-11 items-center gap-2.5 rounded-lg border border-line bg-white px-3 text-muted hover:border-[#bdd4e1] focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/15; }
+  .filter-input input { @apply h-10 min-w-0 flex-1 bg-transparent text-base font-medium text-ink placeholder:text-muted; }
+  .shoe-tag { @apply inline-flex items-center gap-1 rounded-md bg-sky-soft px-2 py-1 text-xs font-semibold text-navy; }
+  .media-uploader { @apply overflow-hidden rounded-lg border border-line bg-white; }
+  .media-add-button { @apply flex min-h-16 w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-sky-soft/55; }
+  .media-add-icon { @apply grid size-9 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep; }
+  .media-add-button strong { @apply block text-sm font-bold text-navy; }
+  .media-add-button small { @apply mt-0.5 block truncate text-xs font-semibold text-muted; }
+  .media-file-list { @apply divide-y divide-line border-t border-line; }
+  .media-file-list li { @apply flex min-h-11 items-center gap-2 px-3 text-sm font-semibold text-ink; }
+  .media-file-list button { @apply grid size-8 shrink-0 place-items-center rounded-md text-muted hover:bg-rose-50 hover:text-rose-700; }
+  .media-uploader-compact .media-add-button { @apply min-h-14; }
+  .brand-logo { @apply inline-flex shrink-0 items-center gap-2.5 text-navy; }
+  .brand-logo img { @apply block object-contain; }
+  .brand-logo-sm img { @apply size-8; }
+  .brand-logo-md img { @apply size-10; }
+  .brand-logo-lg img { @apply size-12; }
+  .brand-logo-xl img { @apply size-16; }
+  .brand-logo-name { @apply leading-tight; }
+  .brand-logo-name strong { @apply block text-base font-extrabold tracking-[-0.02em]; }
+  .brand-logo-name small { @apply block text-xs font-semibold text-muted; }
+  .brand-logo-light { @apply text-white; }
+  .brand-logo-light .brand-logo-name small { @apply text-white/70; }
+  .client-profile-header { @apply rounded-xl border border-line bg-white p-5 shadow-[0_10px_32px_rgba(29,79,111,0.04)] sm:p-6; }
+  .client-header-actions { @apply flex shrink-0 items-center justify-end gap-2; }
+  .client-header-button { @apply min-h-10 px-3 py-2; }
+}
+
+.page-enter-active, .page-leave-active { transition: opacity 180ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
+.page-enter-from { opacity: 0; transform: translateY(8px); }
+.page-leave-to { opacity: 0; transform: translateY(-4px); }
+.modal-enter-active, .modal-leave-active { transition: opacity 180ms ease; }
+.modal-enter-active > section, .modal-leave-active > section { transition: transform 220ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease; }
+.modal-enter-from, .modal-leave-to { opacity: 0; }
+.modal-enter-from > section, .modal-leave-to > section { opacity: 0; transform: translateY(10px) scale(.98); }
+
+@media (max-width: 639px) {
+  .compact-intake-button { @apply min-h-10 shrink-0 px-3 py-2 text-xs; }
+  .client-page-title { @apply text-2xl; }
+  .client-profile-title { @apply text-[1.65rem] leading-[1.05]; }
+  .client-header-button { @apply min-h-9 gap-1.5 px-2.5 py-1.5 text-xs; }
+}
+
+@media (max-width: 767px) {
+  .desktop-filter-panel { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+@media print {
+  @page { size: A4 landscape; margin: 10mm; }
+  body { background: white !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .shell-sidebar, .shell-mobile-header { display: none !important; }
+  .shell-main { padding-left: 0 !important; }
+  .shell-content { max-width: none !important; padding: 0 !important; }
 }
