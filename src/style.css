@@ -37,14 +37,14 @@
   .nav-link.router-link-active { @apply bg-sky-soft text-navy; }
   .nav-link.router-link-active::before { content: ""; @apply absolute inset-y-2 left-0 w-0.5 rounded-full bg-sky; }
   .field { @apply grid gap-2 text-sm font-semibold text-ink; }
-  .field input, .field select, .field textarea, .input { @apply min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-base font-medium text-ink placeholder:text-muted; transition: border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
-  .field input:hover, .field select:hover, .field textarea:hover, .input:hover { @apply border-[#b7d2e1]; }
-  .field input:focus, .field select:focus, .field textarea:focus, .input:focus { @apply border-sky bg-white shadow-[0_0_0_4px_rgba(56,169,224,0.13)]; transform: translateY(-1px); }
+  .field input, .field select, .field textarea, .field .app-select-trigger, .input { @apply min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-base font-medium text-ink placeholder:text-muted; transition: border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
+  .field input:hover, .field select:hover, .field textarea:hover, .field .app-select-trigger:hover, .input:hover { @apply border-[#b7d2e1]; }
+  .field input:focus, .field select:focus, .field textarea:focus, .field .app-select-trigger:focus, .input:focus { @apply border-sky bg-white shadow-[0_0_0_4px_rgba(56,169,224,0.13)]; transform: translateY(-1px); }
   .field textarea { @apply resize-y; }
   .field small { @apply font-semibold text-rose-700; }
   .field-dark { @apply text-white; }
-  .field-dark input, .field-dark select, .field-dark textarea { @apply border-[#31536d] bg-[#0b2941] text-white placeholder:text-[#9ab6c8] focus:border-sky; }
-  .field-dark input:focus, .field-dark select:focus, .field-dark textarea:focus { @apply bg-[#0b2941] shadow-[0_0_0_4px_rgba(56,169,224,0.18)]; }
+  .field-dark input, .field-dark select, .field-dark textarea, .field-dark .app-select-trigger { @apply border-[#31536d] bg-[#0b2941] text-white placeholder:text-[#9ab6c8] focus:border-sky; }
+  .field-dark input:focus, .field-dark select:focus, .field-dark textarea:focus, .field-dark .app-select-trigger:focus { @apply bg-[#0b2941] shadow-[0_0_0_4px_rgba(56,169,224,0.18)]; }
   .app-field-control { @apply relative flex items-center rounded-lg; }
   .app-field-control > input, .app-field-control > select, .app-field-control > textarea { @apply flex-1; }
   .app-field-control > svg:first-child { @apply pointer-events-none absolute left-3 z-10 text-muted; }
@@ -77,8 +77,13 @@
   .stage-filter button { @apply inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-bold text-muted hover:-translate-y-px hover:bg-sky-soft hover:text-navy; }
   .stage-filter button.active { @apply bg-navy text-white shadow-[0_4px_12px_rgba(16,47,76,0.14)]; }
   .mobile-filter { @apply relative min-w-0; }
-  .mobile-filter select { @apply min-h-11 w-full appearance-none truncate rounded-lg border border-line bg-white px-3 pr-8 text-sm font-bold text-navy focus:border-sky; }
-  .mobile-filter::after { content: ""; @apply pointer-events-none absolute right-3 top-1/2 size-2 -translate-y-2/3 rotate-45 border-b-2 border-r-2 border-muted; }
+  .app-select { @apply block min-w-0; }
+  .app-select-trigger { @apply flex min-h-11 w-full min-w-0 items-center justify-between gap-2 rounded-lg border border-line bg-white px-3 text-left text-sm font-bold text-navy hover:border-[#b7d2e1]; }
+  .mobile-filter .app-select-trigger { @apply pr-3; }
+  .app-select-menu { @apply fixed z-[100] overflow-y-auto rounded-xl border border-line bg-white p-1.5 shadow-[0_20px_55px_rgba(8,31,50,0.2)]; overscroll-behavior: contain; }
+  .app-select-option { @apply flex min-h-11 cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-ink; }
+  .app-select-option.is-active { @apply bg-sky-soft text-navy; }
+  .app-select-option.is-selected { @apply font-bold text-sky-deep; }
   .filter-panel { @apply grid gap-3 rounded-xl border border-line bg-white p-4 shadow-[0_10px_32px_rgba(29,79,111,0.035)] md:grid-cols-2 xl:grid-cols-[1fr_1fr_15rem_auto]; }
   .filter-input { @apply flex min-h-11 items-center gap-2.5 rounded-lg border border-line bg-white px-3 text-muted hover:border-[#bdd4e1] focus-within:border-sky focus-within:ring-2 focus-within:ring-sky/15; }
   .filter-input input { @apply h-10 min-w-0 flex-1 bg-transparent text-base font-medium text-ink placeholder:text-muted; }
@@ -115,6 +120,8 @@
 .modal-enter-active > section, .modal-leave-active > section { transition: transform 220ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease; }
 .modal-enter-from, .modal-leave-to { opacity: 0; }
 .modal-enter-from > section, .modal-leave-to > section { opacity: 0; transform: translateY(10px) scale(.98); }
+.select-menu-enter-active, .select-menu-leave-active { transition: opacity 120ms ease, transform 140ms cubic-bezier(.2,.8,.2,1); transform-origin: top; }
+.select-menu-enter-from, .select-menu-leave-to { opacity: 0; transform: translateY(-4px) scale(.98); }
 
 @media (max-width: 639px) {
   .compact-intake-button { @apply min-h-10 shrink-0 px-3 py-2 text-xs; }
