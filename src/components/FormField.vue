@@ -1,5 +1,6 @@
 <script setup>
 import { computed, useAttrs } from 'vue'
+import AppSelect from './AppSelect.vue'
 
 defineOptions({ inheritAttrs: false })
 const attrs = useAttrs()
@@ -18,8 +19,6 @@ function update(event) {
   const value = props.modelModifiers.number && event.target.value !== '' ? Number(event.target.value) : event.target.value
   emit('update:modelValue', value)
 }
-const optionValue = (option) => typeof option === 'object' ? option.value : option
-const optionLabel = (option) => typeof option === 'object' ? option.label : option
 </script>
 
 <template>
@@ -28,7 +27,7 @@ const optionLabel = (option) => typeof option === 'object' ? option.label : opti
     <span class="app-field-control">
       <slot name="leading" />
       <textarea v-if="multiline" v-bind="controlAttrs" :value="modelValue" @input="update"></textarea>
-      <select v-else-if="options.length" v-bind="controlAttrs" :value="modelValue" @change="update"><option v-for="option in options" :key="optionValue(option)" :value="optionValue(option)">{{ optionLabel(option) }}</option></select>
+      <AppSelect v-else-if="options.length" :model-value="modelValue" :options="options" :aria-label="label" :disabled="controlAttrs.disabled" @update:model-value="emit('update:modelValue', $event)" />
       <input v-else v-bind="controlAttrs" :value="modelValue" @input="update" />
       <slot name="trailing" />
     </span>

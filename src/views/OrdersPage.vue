@@ -10,6 +10,7 @@ import {
   PhWashingMachine as WashingMachineIcon,
 } from '@phosphor-icons/vue'
 import AppShell from '../components/AppShell.vue'
+import AppSelect from '../components/AppSelect.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import { api } from '../services/api'
 import { dateTime, money } from '../lib/format'
@@ -20,6 +21,7 @@ const stages = [
   { value: 'cleaning', label: 'In cleaning', icon: WashingMachineIcon },
   { value: 'ready_for_collection', label: 'Ready for collection', icon: CheckIcon },
 ]
+const stageOptions = stages.map((stage) => ({ value: stage.value, label: stage.label }))
 const orders = ref([])
 const loading = ref(true)
 const error = ref('')
@@ -63,7 +65,7 @@ onMounted(loadOrders)
         <span class="sr-only">Search orders</span>
         <input v-model="search" type="search" placeholder="Search order, client, phone, or shoe" />
       </label>
-      <label class="mobile-filter lg:hidden"><span class="sr-only">Care stage</span><select v-model="status"><option v-for="stage in stages" :key="stage.label" :value="stage.value">{{ stage.label }}</option></select></label>
+      <AppSelect v-model="status" class="mobile-filter lg:hidden" :options="stageOptions" aria-label="Care stage" />
       <div class="stage-filter hidden lg:flex" role="group" aria-label="Filter by care stage">
         <button v-for="stage in stages" :key="stage.label" type="button" :class="{ active: status === stage.value }" :aria-pressed="status === stage.value" @click="status = stage.value">
           <component :is="stage.icon" :size="17" /> {{ stage.label }}

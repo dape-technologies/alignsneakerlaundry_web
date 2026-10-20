@@ -2,12 +2,18 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import { PhArrowRight as ArrowIcon, PhCalendarBlank as CalendarIcon, PhMagnifyingGlass as SearchIcon, PhPlus as PlusIcon, PhSneaker as ShoeIcon, PhUsers as UsersIcon, PhX as ClearIcon } from '@phosphor-icons/vue'
 import AppShell from '../components/AppShell.vue'
+import AppSelect from '../components/AppSelect.vue'
 import { api } from '../services/api'
 import { dateOnly } from '../lib/format'
 
 const clients = ref([])
 const filters = reactive({ client_name: '', shoe_name: '', date: '' })
 const mobileFilter = ref('client_name')
+const mobileFilterOptions = [
+  { value: 'client_name', label: 'Client' },
+  { value: 'shoe_name', label: 'Shoe' },
+  { value: 'date', label: 'Date' },
+]
 const mobileValue = ref('')
 const loading = ref(true)
 const error = ref('')
@@ -52,7 +58,7 @@ onMounted(loadClients)
 
     <section class="mt-6 grid grid-cols-[minmax(0,1fr)_7.75rem] gap-2 md:hidden" aria-label="Client and footwear filters">
       <label class="filter-input"><SearchIcon v-if="mobileFilter !== 'date'" :size="18" /><CalendarIcon v-else :size="18" /><span class="sr-only">Filter value</span><input v-model="mobileValue" :type="mobileFilter === 'date' ? 'date' : 'search'" :placeholder="mobileFilter === 'client_name' ? 'Client name' : 'Shoe name'" /></label>
-      <label class="mobile-filter"><span class="sr-only">Filter by</span><select v-model="mobileFilter"><option value="client_name">Client</option><option value="shoe_name">Shoe</option><option value="date">Date</option></select></label>
+      <AppSelect v-model="mobileFilter" class="mobile-filter" :options="mobileFilterOptions" aria-label="Filter by" />
     </section>
 
     <section class="filter-panel desktop-filter-panel mt-8" aria-label="Client and footwear filters">
