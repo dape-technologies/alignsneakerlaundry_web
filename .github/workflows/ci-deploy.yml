@@ -88,14 +88,16 @@ jobs:
       - name: Upload build
         shell: bash
         run: |
-          scp -i ~/.ssh/deploy_key -P "$SSH_PORT" \
+          scp -o PubkeyAcceptedAlgorithms=ssh-rsa \
+            -i ~/.ssh/deploy_key -P "$SSH_PORT" \
             "$RUNNER_TEMP/web-${GITHUB_SHA}.tar.gz" \
             "$SSH_USER@$SSH_HOST:web-${GITHUB_SHA}.tar.gz"
 
       - name: Activate build
         shell: bash
         run: |
-          ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+          ssh -o PubkeyAcceptedAlgorithms=ssh-rsa \
+            -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
             'bash -s' -- "$APP_PATH" "web-${GITHUB_SHA}.tar.gz" <<'REMOTE'
           set -euo pipefail
 
