@@ -23,6 +23,7 @@ const notice = ref('')
 const selectedStage = ref('received')
 const busySession = ref(null)
 const pendingMove = ref(null)
+const cancellationReason = ref('')
 const touchDrag = ref(null)
 const touchDropStage = ref(null)
 const moveLocks = new Set()
@@ -34,14 +35,19 @@ const stages = [
   { status: 'ready_for_collection', label: 'Ready for collection', icon: CheckCircleIcon },
 ]
 
-const dragNextStage = {
-  received: 'cleaning',
-  cleaning: 'ready_for_collection',
+const allowedMoves = {
+  received: ['cleaning'],
+  cleaning: ['received', 'ready_for_collection'],
+  ready_for_collection: ['cleaning'],
 }
 
 const activeStageNames = stages.map((stage) => stage.status)
 
-const actionNextStage = { ...dragNextStage }
+const actionNextStage = {
+  received: 'cancelled',
+  cleaning: 'ready_for_collection',
+  ready_for_collection: 'collected',
+}
 
 const receivedSessions = ref([])
 const cleaningSessions = ref([])
@@ -90,7 +96,7 @@ async function loadDashboard() {
 
 function handleBoardMove({ sessionId, from, to }) {
   const session = data.value?.active_sessions.find((item) => item.id === sessionId)
-  if (!session || from === to || moveLocks.has(session.id) || !activeStageNames.includes(to)) return
+  if (!session || from === to || moveLocks.has(session.id) || !allowedMoves[from]?.includes(to)) return
 
   moveLocks.add(session.id)
   session.status = to
@@ -146,16 +152,27 @@ function cancelTouchMove() {
 function requestMove(session, to = actionNextStage[session.status], from = session.status) {
   if (!to || busySession.value) return
 
+  if (to === 'cancelled') {
+    cancellationReason.value = ''
+    pendingMove.value = { session, from, to, kind: 'cancel' }
+    return
+  }
+
   if (to === 'ready_for_collection') {
     moveLocks.add(session.id)
-    pendingMove.value = { session, from, to }
+    pendingMove.value = { session, from, to, kind: 'ready' }
+    return
+  }
+
+  if (to === 'collected' && session.order.balance > 0) {
+    error.value = 'Record the full outstanding payment before collection.'
     return
   }
 
   persistMove(session, from, to)
 }
 
-async function persistMove(session, from, to) {
+async function persistMove(session, from, to, notes = 'Updated from the care board.') {
   busySession.value = session.id
   notice.value = ''
   error.value = ''
@@ -163,7 +180,7 @@ async function persistMove(session, from, to) {
     await api.patch(`/cleaning-sessions/${session.id}/status`, {
       status: to,
       expected_status: from,
-      notes: 'Updated from the care board.',
+      notes,
     })
     showNotice(`${session.shoe.reference} moved`)
   } catch (requestError) {
@@ -182,8 +199,15 @@ function confirmReady() {
   persistMove(session, from, to)
 }
 
+function confirmCancellation() {
+  if (!pendingMove.value || !cancellationReason.value.trim()) return
+  const { session, from, to } = pendingMove.value
+  persistMove(session, from, to, cancellationReason.value.trim())
+}
+
 async function cancelReady() {
   pendingMove.value = null
+  cancellationReason.value = ''
   await loadDashboard()
 }
 
@@ -195,7 +219,7 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
   <AppShell>
     <header>
       <div>
-        <p class="eyebrow">Today at Align</p>
+        <p class="eyebrow">Today at Go Fresh</p>
         <h1 class="page-title">{{ auth.isAdmin ? 'Operations overview' : 'Care board' }}</h1>
       </div>
     </header>
@@ -280,7 +304,7 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
                   <div class="flex min-w-52 items-center gap-3">
                     <img v-if="session.shoe.reference_photo_url" :src="session.shoe.reference_photo_url" :alt="session.shoe.display_name" class="size-10 rounded-lg object-cover" />
                     <span v-else class="grid size-10 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep"><ShoeIcon :size="20" /></span>
-                    <span><strong class="block text-navy">{{ session.shoe.display_name }}</strong><small class="font-bold text-sky-deep">{{ session.shoe.reference }}</small></span>
+                    <span><strong class="block text-navy">{{ session.shoe.display_name }}</strong><small class="font-bold text-sky-deep">{{ session.shoe.reference }}<template v-if="session.tag"> · {{ session.tag.label }}</template></small></span>
                   </div>
                 </td>
                 <td><strong class="block text-navy">{{ session.order.client.name }}</strong><span class="text-xs text-muted">{{ session.order.client.phone }}</span></td>
@@ -292,6 +316,7 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
           </table>
           <div v-else class="stage-table-empty"><CheckCircleIcon :size="24" /><span>No footwear in this stage</span></div>
         </section>
+
       </section>
 
       <section v-else class="mt-10" aria-labelledby="care-board-heading">
@@ -327,13 +352,20 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
     </template>
 
     <div v-if="pendingMove" class="dialog-backdrop" role="presentation" @click.self="cancelReady">
-      <section role="alertdialog" aria-modal="true" aria-labelledby="ready-dialog-title" class="confirm-dialog">
+      <section role="alertdialog" aria-modal="true" :aria-labelledby="pendingMove.kind === 'cancel' ? 'cancel-dialog-title' : 'ready-dialog-title'" class="confirm-dialog">
         <span class="metric-icon"><CheckCircleIcon :size="24" /></span>
-        <h2 id="ready-dialog-title" class="mt-4 text-xl font-bold text-navy">Mark as ready?</h2>
-        <p class="mt-2 text-sm leading-6 text-muted">The client will receive a pickup email for {{ pendingMove.session.shoe.reference }}.</p>
+        <template v-if="pendingMove.kind === 'cancel'">
+          <h2 id="cancel-dialog-title" class="mt-4 text-xl font-bold text-navy">Cancel order?</h2>
+          <label class="field mt-4"><span>Reason<span class="required-mark" aria-hidden="true">*</span></span><textarea v-model="cancellationReason" rows="2" required autofocus placeholder="Add a cancellation reason"></textarea></label>
+        </template>
+        <template v-else>
+          <h2 id="ready-dialog-title" class="mt-4 text-xl font-bold text-navy">Mark as ready?</h2>
+          <p class="mt-2 text-sm leading-6 text-muted">The client will receive a pickup email for {{ pendingMove.session.shoe.reference }}.</p>
+        </template>
         <div class="mt-6 grid grid-cols-2 gap-3">
-          <button type="button" class="button-secondary justify-center" :disabled="busySession" @click="cancelReady">Cancel</button>
-          <button type="button" class="button-primary justify-center" :disabled="busySession" @click="confirmReady">{{ busySession ? 'Updating…' : 'Confirm' }}</button>
+          <button type="button" class="button-secondary justify-center" :disabled="busySession" @click="cancelReady">Back</button>
+          <button v-if="pendingMove.kind === 'cancel'" type="button" class="button-primary justify-center" :disabled="busySession || !cancellationReason.trim()" @click="confirmCancellation">{{ busySession ? 'Cancelling…' : 'Cancel order' }}</button>
+          <button v-else type="button" class="button-primary justify-center" :disabled="busySession" @click="confirmReady">{{ busySession ? 'Updating…' : 'Confirm' }}</button>
         </div>
       </section>
     </div>

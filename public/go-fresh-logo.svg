@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Go Fresh Shoe Laundry">
+  <rect width="512" height="512" rx="116" fill="#102f4c"/>
+  <path d="M83 292c45 7 80-8 103-47l23-40c6-11 20-13 30-5l57 48c23 19 51 31 83 38l39 9c25 6 43 28 43 54v16c0 27-22 49-49 49H126c-47 0-85-38-85-85 0-24 19-41 42-37Z" fill="#fff"/>
+  <path d="M69 358h361" fill="none" stroke="#38a9e0" stroke-linecap="round" stroke-width="24"/>
+  <path d="m349 87 11 31 31 11-31 11-11 31-11-31-31-11 31-11 11-31Z" fill="#38a9e0"/>
+  <circle cx="423" cy="193" r="18" fill="#38a9e0"/>
+  <circle cx="291" cy="184" r="12" fill="#38a9e0"/>
+</svg>

@@ -17,8 +17,9 @@ let touchOrigin = null
 let touchPreview = null
 
 const actionLabels = {
-  received: 'Start cleaning',
+  received: 'Cancel order',
   cleaning: 'Mark ready',
+  ready_for_collection: 'Mark collected',
 }
 
 onMounted(() => {
@@ -123,7 +124,7 @@ onBeforeUnmount(() => {
       <span v-else class="grid size-12 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep"><ShoeIcon :size="23" /></span>
       <div class="min-w-0 flex-1">
         <strong class="block truncate text-navy">{{ session.shoe.display_name }}</strong>
-        <span class="text-xs font-bold text-sky-deep">{{ session.shoe.reference }}</span>
+        <span class="text-xs font-bold text-sky-deep">{{ session.shoe.reference }}<template v-if="session.tag"> · {{ session.tag.label }}</template></span>
       </div>
       <button
         type="button"
@@ -142,7 +143,7 @@ onBeforeUnmount(() => {
         <span class="block text-sm font-semibold text-navy">{{ session.order.client.name }}</span>
         <RouterLink :to="`/orders/${session.order.id}`" data-no-drag draggable="false" class="text-xs font-bold text-muted hover:text-sky-deep">{{ session.order.reference }}</RouterLink>
       </div>
-      <button v-if="actionLabels[session.status]" type="button" data-no-drag class="card-action" :disabled="busy" @pointerdown.stop @click.stop="emit('action', session)">
+      <button v-if="actionLabels[session.status]" type="button" data-no-drag class="card-action" :class="{ 'text-rose-700': session.status === 'received' }" :disabled="busy || (session.status === 'ready_for_collection' && session.order.balance > 0)" :title="session.status === 'ready_for_collection' && session.order.balance > 0 ? 'Full payment is required before collection' : ''" @pointerdown.stop @click.stop="emit('action', session)">
         {{ actionLabels[session.status] }} <ArrowRightIcon :size="14" />
       </button>
     </div>

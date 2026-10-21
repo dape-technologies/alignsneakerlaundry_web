@@ -13,7 +13,7 @@ describe('staff-only routes', () => {
   })
 
   it('protects every operational route', () => {
-    for (const path of ['/dashboard', '/orders', '/orders/new', '/clients', '/reports', '/attendants']) {
+    for (const path of ['/dashboard', '/orders', '/orders/new', '/orders/:id/receipt', '/clients', '/reports', '/attendants']) {
       expect(router.getRoutes().find((route) => route.path === path).meta.auth).toBe(true)
     }
   })

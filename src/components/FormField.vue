@@ -15,6 +15,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue'])
 const controlAttrs = computed(() => Object.fromEntries(Object.entries(attrs).filter(([key]) => !['class', 'style'].includes(key))))
+const isRequired = computed(() => 'required' in controlAttrs.value && controlAttrs.value.required !== false)
 function update(event) {
   const value = props.modelModifiers.number && event.target.value !== '' ? Number(event.target.value) : event.target.value
   emit('update:modelValue', value)
@@ -23,7 +24,7 @@ function update(event) {
 
 <template>
   <label class="field app-field" :class="[$attrs.class, { 'field-dark': dark, 'app-field-invalid': error }]" :style="$attrs.style">
-    <span>{{ label }}</span>
+    <span>{{ label }}<span v-if="isRequired" class="required-mark" aria-hidden="true">*</span></span>
     <span class="app-field-control">
       <slot name="leading" />
       <textarea v-if="multiline" v-bind="controlAttrs" :value="modelValue" @input="update"></textarea>

@@ -115,7 +115,7 @@ async function logout() {
     </aside>
 
     <header class="shell-mobile-header sticky top-0 z-20 flex h-16 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur lg:hidden">
-      <RouterLink to="/dashboard" aria-label="Align operations dashboard"><BrandLogo size="sm" show-name /></RouterLink>
+      <RouterLink to="/dashboard" aria-label="Go Fresh operations dashboard"><BrandLogo size="sm" show-name /></RouterLink>
       <button ref="menuTrigger" class="icon-button" type="button" aria-label="Open navigation" aria-controls="mobile-navigation" :aria-expanded="menuOpen" @click="openMenu"><ListIcon :size="24" /></button>
     </header>
 
