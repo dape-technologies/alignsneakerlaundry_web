@@ -65,7 +65,7 @@ async function submit() {
         <div class="max-w-[670px] pb-[30vh] xl:pb-[28vh]">
           <p class="mb-4 flex items-center gap-2 text-sm font-bold text-sky-deep"><SparkleIcon :size="18" weight="fill" /> Care, clearly managed</p>
           <h1 class="text-[clamp(3.8rem,6.6vw,7.5rem)] font-extrabold uppercase leading-[0.82] tracking-[-0.075em] text-navy">
-            Align<br /><span class="text-sky-deep">Sneaker</span><br />Laundry
+            Go Fresh<br /><span class="text-sky-deep">Shoe</span><br />Laundry
           </h1>
         </div>
 
@@ -92,7 +92,7 @@ async function submit() {
 
       <div class="relative w-full max-w-md">
         <h1 class="login-mobile-title mb-5 whitespace-nowrap text-center text-[clamp(1.5rem,7vw,2rem)] font-extrabold tracking-[-0.05em] text-white drop-shadow-[0_2px_14px_rgba(16,47,76,0.35)]">
-          Align <span class="text-[#79d0f4]">Sneaker</span> Laundry
+          Go Fresh <span class="text-[#79d0f4]">Shoe</span> Laundry
         </h1>
 
         <form
@@ -118,7 +118,7 @@ async function submit() {
                   type="email"
                   autocomplete="email"
                   inputmode="email"
-                  placeholder="name@alignlaundry.com"
+                  placeholder="staff@example.com"
                   required
                 />
               </div>

@@ -16,12 +16,17 @@ const emit = defineEmits(['move', 'action', 'touch-drag-start', 'touch-drag-move
 const column = ref(null)
 const draggedOver = ref(false)
 let cleanup
+const allowedTargets = {
+  received: ['cleaning'],
+  cleaning: ['received', 'ready_for_collection'],
+  ready_for_collection: ['cleaning'],
+}
 
 onMounted(() => {
   cleanup = dropTargetForElements({
     element: column.value,
     getData: () => ({ type: 'care-column', status: props.status }),
-    canDrop: ({ source }) => source.data.type === 'care-session' && source.data.fromStatus !== props.status,
+    canDrop: ({ source }) => source.data.type === 'care-session' && allowedTargets[source.data.fromStatus]?.includes(props.status),
     onDragEnter: () => { draggedOver.value = true },
     onDragLeave: () => { draggedOver.value = false },
     onDrop: ({ source }) => {

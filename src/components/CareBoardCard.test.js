@@ -121,4 +121,18 @@ describe('CareBoardCard drag surface', () => {
 
     wrapper.unmount()
   })
+
+  it('uses lifecycle-specific actions for received and ready footwear', async () => {
+    const received = mountCard()
+    expect(received.get('.card-action').text()).toContain('Cancel order')
+    received.unmount()
+
+    const ready = mount(CareBoardCard, {
+      props: { session: { ...session, status: 'ready_for_collection', order: { ...session.order, balance: 0 } } },
+      global: { stubs: { RouterLink: { props: ['to'], template: '<a><slot /></a>' } } },
+    })
+    expect(ready.get('.card-action').text()).toContain('Mark collected')
+    expect(ready.get('.card-action').attributes('disabled')).toBeUndefined()
+    ready.unmount()
+  })
 })

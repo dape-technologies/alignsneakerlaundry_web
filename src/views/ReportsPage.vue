@@ -134,7 +134,7 @@ onMounted(loadReport)
           </article>
         </section>
 
-        <footer class="print-footer">Align Sneaker Laundry · Generated {{ dateOnly(new Date()) }}</footer>
+        <footer class="print-footer">Go Fresh Shoe Laundry · Generated {{ dateOnly(new Date()) }}</footer>
       </template>
     </div>
   </AppShell>

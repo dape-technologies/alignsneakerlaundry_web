@@ -18,7 +18,7 @@ const formError = ref('')
 const form = reactive({ name: '', phone: '', email: '', notes: '' })
 const editingShoe = ref(null)
 const shoePhotos = ref([])
-const shoeForm = reactive({ shoe_type: '', brand: '', model: '', color: '', size: '', identifying_notes: '' })
+const shoeForm = reactive({ shoe_type: '', brand: '', model: '', color: '', size: '' })
 async function loadClient(page = 1) {
   try { client.value = (await api.get(`/clients/${route.params.id}`, { params: { page } })).data; Object.assign(form, { name: client.value.name, phone: client.value.phone, email: client.value.email || '', notes: client.value.notes || '' }) }
   catch { error.value = 'This client record could not be loaded.' }
@@ -34,7 +34,7 @@ async function saveClient() {
 function startShoeEdit(shoe) {
   editingShoe.value = shoe
   shoePhotos.value = []
-  Object.assign(shoeForm, { shoe_type: shoe.shoe_type, brand: shoe.brand || '', model: shoe.model || '', color: shoe.color || '', size: shoe.size || '', identifying_notes: shoe.identifying_notes || '' })
+  Object.assign(shoeForm, { shoe_type: shoe.shoe_type, brand: shoe.brand || '', model: shoe.model || '', color: shoe.color || '', size: shoe.size || '' })
 }
 async function saveShoe() {
   if (!navigator.onLine) { formError.value = 'A connection is required to update footwear.'; return }
@@ -80,11 +80,11 @@ async function saveShoe() {
           <div v-if="client.shoes.length" class="mt-5 grid gap-4 md:grid-cols-2">
             <article v-for="shoe in client.shoes" :key="shoe.id" class="form-section">
               <div class="flex items-start gap-4"><img v-if="shoe.reference_photo_url" :src="shoe.reference_photo_url" :alt="shoe.display_name" class="size-20 rounded-lg object-cover" /><span v-else class="grid size-20 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep"><ShoeIcon :size="30" /></span><div><p class="text-xs font-bold text-sky-deep">{{ shoe.reference }}</p><h3 class="mt-1 font-bold text-navy">{{ shoe.display_name }}</h3><p class="mt-1 text-sm text-muted"><template v-if="shoe.size">Size {{ shoe.size }} · </template>{{ shoe.cleaning_sessions_count }} care sessions</p></div></div>
-              <p v-if="shoe.identifying_notes" class="mt-4 border-t border-line pt-4 text-sm text-muted">{{ shoe.identifying_notes }}</p><button class="button-tertiary mt-3 -ml-3" type="button" @click="startShoeEdit(shoe)">Edit footwear</button>
+              <button class="button-tertiary mt-3 -ml-3" type="button" @click="startShoeEdit(shoe)">Edit footwear</button>
             </article>
           </div>
           <div v-else class="empty-state mt-5"><ShoeIcon :size="32" /><h2>No footwear registered</h2><p>This client’s first pair will be saved during their next intake.</p></div>
-          <form v-if="editingShoe" class="form-section mt-5 grid gap-4 sm:grid-cols-2" @submit.prevent="saveShoe"><div class="sm:col-span-2"><p class="eyebrow">Editing {{ editingShoe.reference }}</p><h3 class="section-title mt-1">Footwear details</h3></div><label class="field"><span>Type</span><input v-model="shoeForm.shoe_type" required /></label><label class="field"><span>Brand</span><input v-model="shoeForm.brand" /></label><label class="field"><span>Model</span><input v-model="shoeForm.model" /></label><label class="field"><span>Colour</span><input v-model="shoeForm.color" /></label><label class="field"><span>Size</span><input v-model="shoeForm.size" /></label><label class="field sm:col-span-2"><span>Identifying notes</span><textarea v-model="shoeForm.identifying_notes" rows="2"></textarea></label><div class="sm:col-span-2"><p class="mb-2 text-sm font-semibold text-ink">Replacement reference photo</p><MediaUploader v-model="shoePhotos" :max-files="1" compact /></div><p v-if="formError" class="text-sm font-semibold text-rose-700">{{ formError }}</p><div class="flex justify-end gap-2 sm:col-span-2"><button class="button-secondary" type="button" @click="editingShoe = null">Cancel</button><button class="button-primary" :disabled="saving">{{ saving ? 'Saving…' : 'Save footwear' }}</button></div></form>
+          <form v-if="editingShoe" class="form-section mt-5 grid gap-4 sm:grid-cols-2" @submit.prevent="saveShoe"><div class="sm:col-span-2"><p class="eyebrow">Editing {{ editingShoe.reference }}</p><h3 class="section-title mt-1">Footwear details</h3></div><label class="field"><span>Type</span><input v-model="shoeForm.shoe_type" required /></label><label class="field"><span>Brand</span><input v-model="shoeForm.brand" /></label><label class="field"><span>Model</span><input v-model="shoeForm.model" /></label><label class="field"><span>Colour</span><input v-model="shoeForm.color" /></label><label class="field"><span>Size</span><input v-model="shoeForm.size" /></label><div class="sm:col-span-2"><p class="mb-2 text-sm font-semibold text-ink">Replacement reference photo</p><MediaUploader v-model="shoePhotos" :max-files="1" compact /></div><p v-if="formError" class="text-sm font-semibold text-rose-700">{{ formError }}</p><div class="flex justify-end gap-2 sm:col-span-2"><button class="button-secondary" type="button" @click="editingShoe = null">Cancel</button><button class="button-primary" :disabled="saving">{{ saving ? 'Saving…' : 'Save footwear' }}</button></div></form>
         </div>
         <div>
           <div class="flex items-center gap-3"><span class="metric-icon"><HistoryIcon :size="23" /></span><div><h2 class="section-title">Service history</h2><p class="text-sm text-muted">Every visit and care outcome</p></div></div>

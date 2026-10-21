@@ -6,6 +6,7 @@ const DashboardPage = () => import('../views/DashboardPage.vue')
 const OrdersPage = () => import('../views/OrdersPage.vue')
 const NewOrderPage = () => import('../views/NewOrderPage.vue')
 const OrderDetailPage = () => import('../views/OrderDetailPage.vue')
+const OrderReceiptPage = () => import('../views/OrderReceiptPage.vue')
 const ClientsPage = () => import('../views/ClientsPage.vue')
 const ClientDetailPage = () => import('../views/ClientDetailPage.vue')
 const ReportsPage = () => import('../views/ReportsPage.vue')
@@ -21,6 +22,7 @@ const router = createRouter({
     { path: '/dashboard', component: DashboardPage, meta: { auth: true } },
     { path: '/orders', component: OrdersPage, meta: { auth: true } },
     { path: '/orders/new', component: NewOrderPage, meta: { auth: true } },
+    { path: '/orders/:id/receipt', component: OrderReceiptPage, meta: { auth: true } },
     { path: '/orders/:id', component: OrderDetailPage, meta: { auth: true } },
     { path: '/clients', component: ClientsPage, meta: { auth: true } },
     { path: '/clients/:id', component: ClientDetailPage, meta: { auth: true } },

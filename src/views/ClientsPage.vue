@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { PhArrowRight as ArrowIcon, PhCalendarBlank as CalendarIcon, PhMagnifyingGlass as SearchIcon, PhPlus as PlusIcon, PhSneaker as ShoeIcon, PhUsers as UsersIcon, PhX as ClearIcon } from '@phosphor-icons/vue'
 import AppShell from '../components/AppShell.vue'
 import AppSelect from '../components/AppSelect.vue'
@@ -18,6 +18,9 @@ const mobileValue = ref('')
 const loading = ref(true)
 const error = ref('')
 let timer
+
+const footwearRows = computed(() => clients.value.flatMap((client) =>
+  client.shoes.map((shoe) => ({ client, shoe }))))
 
 async function loadClients() {
   loading.value = true
@@ -70,22 +73,23 @@ onMounted(loadClients)
 
     <div v-if="error" class="alert-error mt-6">{{ error }}</div>
     <div v-else-if="loading" class="mt-6 space-y-3"><div v-for="index in 6" :key="index" class="skeleton h-18"></div></div>
-    <section v-else-if="clients.length" class="data-panel mt-6 overflow-x-auto">
+    <section v-else-if="footwearRows.length" class="data-panel mt-6 overflow-x-auto">
       <table class="data-table min-w-[920px]">
-        <thead><tr><th>Client</th><th>Contact</th><th>Registered footwear</th><th>Last service</th><th>Visits</th><th><span class="sr-only">Open</span></th></tr></thead>
+        <thead><tr><th>Footwear</th><th>Owner</th><th>Contact</th><th>Last service</th><th>Services</th><th><span class="sr-only">Open owner record</span></th></tr></thead>
         <tbody>
-          <tr v-for="client in clients" :key="client.id">
+          <tr v-for="{ client, shoe } in footwearRows" :key="shoe.id">
+            <td>
+              <div class="flex min-w-64 items-center gap-3">
+                <img v-if="shoe.reference_photo_url" :src="shoe.reference_photo_url" :alt="shoe.display_name" class="size-11 rounded-lg object-cover" />
+                <span v-else class="grid size-11 shrink-0 place-items-center rounded-lg bg-sky-soft text-sky-deep"><ShoeIcon :size="21" /></span>
+                <span><strong class="block text-navy">{{ shoe.display_name }}</strong><small class="font-bold text-sky-deep">{{ shoe.reference }}</small><small v-if="shoe.size" class="ml-2 text-muted">Size {{ shoe.size }}</small></span>
+              </div>
+            </td>
             <td><RouterLink :to="`/clients/${client.id}`" class="font-bold text-navy hover:text-sky-deep">{{ client.name }}</RouterLink></td>
             <td><strong class="block text-sm text-sky-deep">{{ client.phone }}</strong><span class="text-xs text-muted">{{ client.email }}</span></td>
-            <td>
-              <div v-if="client.shoes.length" class="flex max-w-md flex-wrap gap-1.5">
-                <span v-for="shoe in client.shoes" :key="shoe.id" class="shoe-tag"><ShoeIcon :size="14" /> {{ shoe.display_name }}</span>
-              </div>
-              <span v-else class="text-sm text-muted">No footwear registered</span>
-            </td>
-            <td class="whitespace-nowrap text-sm font-semibold text-muted">{{ dateOnly(client.last_service_at) }}</td>
-            <td><strong class="text-navy">{{ client.orders_count }}</strong><span class="ml-1 text-xs text-muted">order<span v-if="client.orders_count !== 1">s</span></span></td>
-            <td class="text-right"><RouterLink :to="`/clients/${client.id}`" class="icon-button ml-auto" :aria-label="`Open ${client.name}`"><ArrowIcon :size="18" /></RouterLink></td>
+            <td class="whitespace-nowrap text-sm font-semibold text-muted">{{ dateOnly(shoe.last_service_at) }}</td>
+            <td><strong class="text-navy">{{ shoe.cleaning_sessions_count }}</strong><span class="ml-1 text-xs text-muted">service<span v-if="shoe.cleaning_sessions_count !== 1">s</span></span></td>
+            <td class="text-right"><RouterLink :to="`/clients/${client.id}`" class="icon-button ml-auto" :aria-label="`Open ${shoe.display_name} owner record`"><ArrowIcon :size="18" /></RouterLink></td>
           </tr>
         </tbody>
       </table>

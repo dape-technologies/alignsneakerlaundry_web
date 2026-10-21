@@ -8,11 +8,11 @@ export default defineConfig({
   test: { environment: 'jsdom' },
   plugins: [vue(), tailwindcss(), VitePWA({
     registerType: 'autoUpdate',
-    includeAssets: ['favicon.png', 'align-logo.png', 'pwa-192.png', 'pwa-512.png'],
+    includeAssets: ['favicon.svg', 'go-fresh-logo.svg', 'pwa-icon.svg'],
     manifest: {
-      name: 'Align Sneaker Laundry Operations',
-      short_name: 'Align Laundry',
-      description: 'Staff operations workspace for Align Sneaker Laundry.',
+      name: 'Go Fresh Shoe Laundry Operations',
+      short_name: 'Go Fresh',
+      description: 'Staff operations workspace for Go Fresh Shoe Laundry.',
       theme_color: '#ffffff',
       background_color: '#f6fafd',
       display: 'standalone',
@@ -20,9 +20,8 @@ export default defineConfig({
       scope: '/',
       start_url: '/',
       icons: [
-        { src: '/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-        { src: '/pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        { src: '/pwa-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' },
+        { src: '/pwa-icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'maskable' },
       ],
     },
     workbox: {
