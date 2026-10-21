@@ -79,8 +79,8 @@ onMounted(loadReport)
         <div><p class="eyebrow">Owner view</p><h1 class="page-title">Business reports</h1><p v-if="report" class="mt-3 text-sm font-semibold text-muted">{{ dateOnly(report.period.from) }} – {{ dateOnly(report.period.to) }}</p></div>
         <div class="report-actions flex flex-wrap items-end gap-3">
           <form class="flex flex-wrap items-end gap-3" @submit.prevent="loadReport">
-            <label class="field"><span>From</span><input v-model="filters.from" type="date" required /></label>
-            <label class="field"><span>To</span><input v-model="filters.to" type="date" required /></label>
+            <label class="field"><span>From<span class="required-mark" aria-hidden="true">*</span></span><input v-model="filters.from" type="date" required /></label>
+            <label class="field"><span>To<span class="required-mark" aria-hidden="true">*</span></span><input v-model="filters.to" type="date" required /></label>
             <button class="button-primary" type="submit">Apply</button>
           </form>
           <button class="button-secondary" type="button" :disabled="!report" @click="printReport"><PrintIcon :size="18" /> Print report</button>

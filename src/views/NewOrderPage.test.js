@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   post: vi.fn(),
   push: vi.fn(),
+  query: { client: 1 },
 }))
 
 vi.mock('../services/api', () => ({
@@ -13,7 +14,7 @@ vi.mock('../services/api', () => ({
 }))
 
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ query: { client: 1 } }),
+  useRoute: () => ({ query: mocks.query }),
   useRouter: () => ({ push: mocks.push }),
 }))
 
@@ -46,6 +47,7 @@ function mountPage() {
 describe('single-shoe registered footwear selection', () => {
   beforeEach(() => {
     sessionStorage.clear()
+    mocks.query.client = 1
     mocks.get.mockImplementation((url) => {
       if (url === '/tags/available') return Promise.resolve({ data: { data: [{ id: 1, label: 'Tag 01' }] } })
       if (url === '/clients/1') return Promise.resolve({ data: structuredClone(client) })
@@ -80,5 +82,15 @@ describe('single-shoe registered footwear selection', () => {
     expect(shoes[0].attributes('aria-pressed')).toBe('false')
     expect(shoes[1].attributes('aria-pressed')).toBe('true')
     expect(wrapper.findAll('section').filter((section) => section.text().includes('One-pair intake'))).toHaveLength(1)
+  })
+
+  it('shows the physical tag selector during new-client registration', async () => {
+    delete mocks.query.client
+    const wrapper = mountPage()
+    await flushPromises()
+
+    expect(wrapper.get('[aria-label="New client physical tag"]').exists()).toBe(true)
+    expect(wrapper.text()).toContain('Assign the physical tag before registering this pair.')
+    expect(wrapper.get('[aria-label="New client physical tag"]').element.closest('label').textContent).toContain('*')
   })
 })

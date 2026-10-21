@@ -21,6 +21,7 @@ const creatingClient = ref(false)
 const availableTags = ref([])
 const clientForm = reactive({ name: '', phone: '', email: '', notes: '' })
 const clientShoe = reactive({ shoe_type: '', brand: '', model: '', color: '', size: '' })
+const clientIntake = reactive({ tag_id: '', service: 'Deep clean', unit_price: 30000 })
 const clientShoePhotos = ref([])
 const registrationDraftKey = 'align:new-client-footwear-draft'
 const order = reactive({ sessions: [], discount: 0, deposit: 0, payment_method: 'cash', due_at: '' })
@@ -33,8 +34,8 @@ const paymentMethodOptions = [
 ]
 let timer
 
-watch([clientForm, clientShoe], () => {
-  sessionStorage.setItem(registrationDraftKey, JSON.stringify({ client: clientForm, shoe: clientShoe }))
+watch([clientForm, clientShoe, clientIntake], () => {
+  sessionStorage.setItem(registrationDraftKey, JSON.stringify({ client: clientForm, shoe: clientShoe, intake: clientIntake }))
 }, { deep: true })
 
 watch(search, () => {
@@ -82,6 +83,7 @@ async function selectClient(client) {
 }
 
 async function createClient() {
+  if (!clientIntake.tag_id) { errors.value = { tags: ['Select a physical tag before continuing.'] }; return }
   if (!navigator.onLine) { errors.value = { connection: ['A connection is required to register a client.'] }; return }
   creatingClient.value = true
   errors.value = {}
@@ -93,7 +95,11 @@ async function createClient() {
     const created = (await api.post('/clients', payload)).data
     sessionStorage.removeItem(registrationDraftKey)
     await selectClient(created)
-    if (selectedClient.value.shoes[0]) order.sessions = [makeExistingSession(selectedClient.value.shoes[0])]
+    if (selectedClient.value.shoes[0]) {
+      const session = makeExistingSession(selectedClient.value.shoes[0])
+      Object.assign(session, clientIntake)
+      order.sessions = [session]
+    }
   } catch (error) {
     errors.value = validationErrors(error)
   } finally {
@@ -143,6 +149,7 @@ onMounted(async () => {
     const draft = JSON.parse(sessionStorage.getItem(registrationDraftKey))
     if (draft?.client) Object.assign(clientForm, draft.client)
     if (draft?.shoe) Object.assign(clientShoe, draft.shoe)
+    if (draft?.intake) Object.assign(clientIntake, draft.intake)
   } catch {
     sessionStorage.removeItem(registrationDraftKey)
   }
@@ -161,7 +168,30 @@ onMounted(async () => {
 
     <section v-if="!selectedClient" class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
       <article class="form-section"><h2 class="section-title">Find an existing client</h2><FormField v-model="search" class="mt-6" label="Client name, phone, or email" type="search" placeholder="Start typing to search" autofocus><template #leading><SearchIcon :size="19" /></template></FormField><p v-if="searching" class="mt-3 text-sm text-muted">Searching…</p><div v-else-if="matches.length" class="mt-4 divide-y divide-line rounded-lg border border-line"><button v-for="client in matches" :key="client.id" type="button" class="flex w-full items-center justify-between gap-4 p-4 text-left hover:bg-sky-soft" @click="selectClient(client)"><span><strong class="block text-navy">{{ client.name }}</strong><span class="mt-1 block text-sm text-muted">{{ client.phone }} · {{ client.email }}</span></span><span class="text-xs font-bold text-sky-deep">{{ client.shoes_count }} pairs</span></button></div><p v-else-if="search.length >= 2" class="mt-4 text-sm font-semibold text-muted">No client found.</p></article>
-      <article class="form-section"><div class="flex items-center gap-3"><span class="metric-icon"><UserPlusIcon :size="22" /></span><h2 class="section-title">Register client & footwear</h2></div><form class="mt-6 grid gap-4 sm:grid-cols-2" @submit.prevent="createClient"><FormField v-model="clientForm.name" label="Full name" required :error="errors.name?.[0]" /><FormField v-model="clientForm.phone" label="Phone number" type="tel" required :error="errors.phone?.[0]" /><FormField v-model="clientForm.email" class="sm:col-span-2" label="Email address" type="email" required :error="errors.email?.[0]" /><FormField v-model="clientForm.notes" class="sm:col-span-2" label="Client notes" multiline rows="2" /><div class="my-1 border-t border-line sm:col-span-2"></div><FormField v-model="clientShoe.shoe_type" label="Footwear type" placeholder="e.g. Sneakers" required :error="errors['shoe.shoe_type']?.[0]" /><FormField v-model="clientShoe.brand" label="Brand" /><FormField v-model="clientShoe.model" label="Model" /><FormField v-model="clientShoe.color" label="Colour" /><FormField v-model="clientShoe.size" label="Size" /><div class="sm:col-span-2"><p class="mb-2 text-sm font-semibold text-ink">Reference photo</p><MediaUploader v-model="clientShoePhotos" :max-files="1" compact /></div><p v-if="errors.connection || errors.form" class="text-sm font-semibold text-rose-700 sm:col-span-2">{{ (errors.connection || errors.form)[0] }}</p><button class="button-primary sm:col-span-2 sm:justify-self-start" type="submit" :disabled="creatingClient">{{ creatingClient ? 'Registering…' : 'Register client & footwear' }}</button></form></article>
+      <article class="form-section">
+        <div class="flex items-center gap-3"><span class="metric-icon"><UserPlusIcon :size="22" /></span><h2 class="section-title">Register client & footwear</h2></div>
+        <form class="mt-6 grid gap-4 sm:grid-cols-2" @submit.prevent="createClient">
+          <FormField v-model="clientForm.name" label="Full name" required :error="errors.name?.[0]" />
+          <FormField v-model="clientForm.phone" label="Phone number" type="tel" required :error="errors.phone?.[0]" />
+          <FormField v-model="clientForm.email" class="sm:col-span-2" label="Email address" type="email" required :error="errors.email?.[0]" />
+          <FormField v-model="clientForm.notes" class="sm:col-span-2" label="Client notes" multiline rows="2" />
+          <div class="my-1 border-t border-line sm:col-span-2"></div>
+          <FormField v-model="clientShoe.shoe_type" label="Footwear type" placeholder="e.g. Sneakers" required :error="errors['shoe.shoe_type']?.[0]" />
+          <FormField v-model="clientShoe.brand" label="Brand" />
+          <FormField v-model="clientShoe.model" label="Model" />
+          <FormField v-model="clientShoe.color" label="Colour" />
+          <FormField v-model="clientShoe.size" label="Size" />
+          <div class="sm:col-span-2"><p class="mb-2 text-sm font-semibold text-ink">Reference photo</p><MediaUploader v-model="clientShoePhotos" :max-files="1" compact /></div>
+          <div class="my-1 border-t border-line sm:col-span-2"></div>
+          <div class="sm:col-span-2"><p class="eyebrow">Intake details</p><p class="mt-1 text-sm text-muted">Assign the physical tag before registering this pair.</p></div>
+          <label class="field"><span>Physical tag<span class="required-mark" aria-hidden="true">*</span></span><AppSelect v-model="clientIntake.tag_id" :options="tagOptions" :disabled="!tagOptions.length" aria-label="New client physical tag" /></label>
+          <label class="field"><span>Care service<span class="required-mark" aria-hidden="true">*</span></span><AppSelect v-model="clientIntake.service" :options="serviceOptions" aria-label="New client care service" /></label>
+          <label class="field"><span>Price (UGX)<span class="required-mark" aria-hidden="true">*</span></span><input v-model.number="clientIntake.unit_price" type="number" min="0" step="1000" required /></label>
+          <p v-if="errors.tags" class="text-sm font-semibold text-rose-700 sm:col-span-2">{{ errors.tags[0] }}</p>
+          <p v-if="errors.connection || errors.form" class="text-sm font-semibold text-rose-700 sm:col-span-2">{{ (errors.connection || errors.form)[0] }}</p>
+          <button class="button-primary sm:col-span-2 sm:justify-self-start" type="submit" :disabled="creatingClient || !clientIntake.tag_id">{{ creatingClient ? 'Registering…' : 'Register client & continue' }}</button>
+        </form>
+      </article>
     </section>
 
     <form v-else class="mt-8 grid gap-6 xl:grid-cols-[1fr_350px]" @submit.prevent="submit">
@@ -175,8 +205,8 @@ onMounted(async () => {
 
         <section v-if="selectedSession" class="form-section">
           <div class="flex items-center justify-between"><div><p class="eyebrow">One-pair intake</p><h2 class="section-title mt-1">{{ selectedSession.shoe_id ? selectedSession.shoe.display_name : 'New footwear' }}</h2></div><button class="button-tertiary" type="button" @click="order.sessions = []">Uncheck</button></div>
-          <div v-if="!selectedSession.shoe_id" class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><label class="field"><span>Footwear type</span><input v-model="selectedSession.shoe.shoe_type" required /></label><label class="field"><span>Brand</span><input v-model="selectedSession.shoe.brand" /></label><label class="field"><span>Model</span><input v-model="selectedSession.shoe.model" /></label><label class="field"><span>Colour</span><input v-model="selectedSession.shoe.color" /></label><label class="field"><span>Size</span><input v-model="selectedSession.shoe.size" /></label></div>
-          <div class="mt-5 grid gap-4 sm:grid-cols-2"><label class="field"><span>Physical tag</span><AppSelect v-model="selectedSession.tag_id" :options="tagOptions" :disabled="!tagOptions.length" aria-label="Physical tag" /></label><label class="field"><span>Care service</span><AppSelect v-model="selectedSession.service" :options="serviceOptions" aria-label="Care service" /></label><label class="field"><span>Price (UGX)</span><input v-model.number="selectedSession.unit_price" type="number" min="0" step="1000" required /></label><div class="sm:col-span-2"><p class="mb-2 text-sm font-semibold text-ink">Intake photos</p><MediaUploader v-model="selectedSession.photos" :max-files="6" /></div></div>
+          <div v-if="!selectedSession.shoe_id" class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"><label class="field"><span>Footwear type<span class="required-mark" aria-hidden="true">*</span></span><input v-model="selectedSession.shoe.shoe_type" required /></label><label class="field"><span>Brand</span><input v-model="selectedSession.shoe.brand" /></label><label class="field"><span>Model</span><input v-model="selectedSession.shoe.model" /></label><label class="field"><span>Colour</span><input v-model="selectedSession.shoe.color" /></label><label class="field"><span>Size</span><input v-model="selectedSession.shoe.size" /></label></div>
+          <div class="mt-5 grid gap-4 sm:grid-cols-2"><label class="field"><span>Physical tag<span class="required-mark" aria-hidden="true">*</span></span><AppSelect v-model="selectedSession.tag_id" :options="tagOptions" :disabled="!tagOptions.length" aria-label="Physical tag" /></label><label class="field"><span>Care service<span class="required-mark" aria-hidden="true">*</span></span><AppSelect v-model="selectedSession.service" :options="serviceOptions" aria-label="Care service" /></label><label class="field"><span>Price (UGX)<span class="required-mark" aria-hidden="true">*</span></span><input v-model.number="selectedSession.unit_price" type="number" min="0" step="1000" required /></label><div class="sm:col-span-2"><p class="mb-2 text-sm font-semibold text-ink">Intake photos</p><MediaUploader v-model="selectedSession.photos" :max-files="6" /></div></div>
         </section>
         <div v-else class="rounded-xl border border-dashed border-[#b9d4e3] p-8 text-center"><ShoeIcon :size="30" class="mx-auto text-sky-deep" /><p class="mt-3 font-bold text-navy">Select one registered pair or add a new pair</p></div>
       </div>

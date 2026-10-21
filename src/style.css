@@ -37,6 +37,8 @@
   .nav-link.router-link-active { @apply bg-sky-soft text-navy; }
   .nav-link.router-link-active::before { content: ""; @apply absolute inset-y-2 left-0 w-0.5 rounded-full bg-sky; }
   .field { @apply grid gap-2 text-sm font-semibold text-ink; }
+  .required-mark { @apply ml-1 text-rose-600; }
+  .field-dark .required-mark { @apply text-rose-300; }
   .field input, .field select, .field textarea, .field .app-select-trigger, .input { @apply min-h-11 w-full rounded-lg border border-line bg-white px-3 py-2.5 text-base font-medium text-ink placeholder:text-muted; transition: border-color 220ms ease, box-shadow 220ms ease, background-color 220ms ease, transform 220ms cubic-bezier(.2,.8,.2,1); }
   .field input:hover, .field select:hover, .field textarea:hover, .field .app-select-trigger:hover, .input:hover { @apply border-[#b7d2e1]; }
   .field input:focus, .field select:focus, .field textarea:focus, .field .app-select-trigger:focus, .input:focus { @apply border-sky bg-white shadow-[0_0_0_4px_rgba(56,169,224,0.13)]; transform: translateY(-1px); }

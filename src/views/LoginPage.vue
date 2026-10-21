@@ -109,7 +109,7 @@ async function submit() {
 
           <div class="login-fields">
             <div class="login-field">
-              <label for="email">Email</label>
+              <label for="email">Email<span class="required-mark" aria-hidden="true">*</span></label>
               <div class="login-control">
                 <EmailIcon :size="19" class="login-control-icon" aria-hidden="true" />
                 <input
@@ -125,7 +125,7 @@ async function submit() {
             </div>
 
             <div class="login-field">
-              <label for="password">Password</label>
+              <label for="password">Password<span class="required-mark" aria-hidden="true">*</span></label>
               <div class="login-control">
                 <LockIcon :size="19" class="login-control-icon" aria-hidden="true" />
                 <input

@@ -356,7 +356,7 @@ onBeforeUnmount(() => window.clearTimeout(noticeTimer))
         <span class="metric-icon"><CheckCircleIcon :size="24" /></span>
         <template v-if="pendingMove.kind === 'cancel'">
           <h2 id="cancel-dialog-title" class="mt-4 text-xl font-bold text-navy">Cancel order?</h2>
-          <label class="field mt-4"><span>Reason</span><textarea v-model="cancellationReason" rows="2" required autofocus placeholder="Add a cancellation reason"></textarea></label>
+          <label class="field mt-4"><span>Reason<span class="required-mark" aria-hidden="true">*</span></span><textarea v-model="cancellationReason" rows="2" required autofocus placeholder="Add a cancellation reason"></textarea></label>
         </template>
         <template v-else>
           <h2 id="ready-dialog-title" class="mt-4 text-xl font-bold text-navy">Mark as ready?</h2>
