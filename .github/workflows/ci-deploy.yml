@@ -48,6 +48,7 @@ jobs:
       SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
       SSH_KNOWN_HOSTS: ${{ secrets.CPANEL_KNOWN_HOSTS }}
       APP_PATH: ${{ vars.CPANEL_APP_PATH }}
+      WEB_ROOT: ${{ vars.CPANEL_WEB_ROOT }}
     steps:
       - uses: actions/checkout@v7
 
@@ -66,7 +67,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for name in SSH_HOST SSH_PORT SSH_USER SSH_KEY SSH_KNOWN_HOSTS APP_PATH; do
+          for name in SSH_HOST SSH_PORT SSH_USER SSH_KEY SSH_KNOWN_HOSTS APP_PATH WEB_ROOT; do
             if [[ -z "${!name:-}" ]]; then
               echo "Missing production setting: $name" >&2
               exit 1
@@ -96,18 +97,22 @@ jobs:
         shell: bash
         run: |
           ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
-            'bash -s' -- "$APP_PATH" "web-${GITHUB_SHA}.tar.gz" <<'REMOTE'
+            'bash -s' -- "$APP_PATH" "$WEB_ROOT" "web-${GITHUB_SHA}.tar.gz" <<'REMOTE'
           set -euo pipefail
 
           deploy_root=$1
-          archive=$2
+          public_dir=$2
+          archive=$3
 
           case "$deploy_root" in
-            /*) ;;
-            *) echo 'CPANEL_APP_PATH must be an absolute path.' >&2; exit 1 ;;
+            "$HOME"/*) ;;
+            *) echo 'CPANEL_APP_PATH must be inside the cPanel home directory.' >&2; exit 1 ;;
+          esac
+          case "$public_dir" in
+            "$HOME"/*) ;;
+            *) echo 'CPANEL_WEB_ROOT must be inside the cPanel home directory.' >&2; exit 1 ;;
           esac
 
-          public_dir="$deploy_root/current/public"
           if [[ ! -f "$public_dir/index.php" || ! -f "$public_dir/.htaccess" ]]; then
             echo 'Deploy the API once before deploying the frontend.' >&2
             exit 1
